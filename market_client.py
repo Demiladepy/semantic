@@ -26,11 +26,13 @@ class PolymarketAdapter(MarketAdapter):
     def fetch_active_markets(self) -> List[Dict[str, Any]]:
         print("Fetching Polymarket data (Gamma API)...")
         try:
-            # Fetch active markets, limit to 50 for real scanning
+            # Fetch active markets, limit to 100 for better clustering chances
             params = {
-                "limit": 50,
+                "limit": 100,
                 "active": "true",
-                "closed": "false"
+                "closed": "false",
+                "order": "volume24hr",
+                "ascending": "false" 
             }
             # Gamma API sometimes requires User-Agent
             headers = {
@@ -72,57 +74,43 @@ class PolymarketAdapter(MarketAdapter):
 
 class KalshiAdapter(MarketAdapter):
     def __init__(self):
-        self.api_url = "https://trading-api.kalshi.com/v1"
-        # Kalshi API typically requires an API key
-        # For demonstration, let's assume it's set as an environment variable or passed in
-        # self.api_key = os.environ.get("KALSHI_API_KEY") # Uncomment and set your API key
+        # Public-facing elections API often allows reads without auth
+        self.api_url = "https://api.elections.kalshi.com/trade-api/v2/markets"
 
     def fetch_active_markets(self) -> List[Dict[str, Any]]:
-        print("Fetching Kalshi data...")
+        print("Fetching Kalshi data (Elections Public API)...")
         try:
             headers = {
-                # "X-API-KEY": self.api_key, # Uncomment if using an API key
                 "User-Agent": "Mozilla/5.0 (compatible; SemanticArbBot/1.0)"
             }
-            # Kalshi's /markets endpoint for fetching market data
-            # We'll fetch all markets and filter for active ones, or use query params if available.
-            # Kalshi's API documentation suggests /markets endpoint for listing markets.
-            # Let's assume a simple GET request to /markets for now.
-            # A real implementation would likely use /markets?status=active or similar.
-            response = requests.get(f"{self.api_url}/markets", headers=headers, timeout=15)
+            params = {"limit": 100, "status": "active"}
+            response = requests.get(self.api_url, params=params, headers=headers, timeout=15)
+            
+            if response.status_code in [401, 403]:
+                print("Kalshi Public API access denied (Auth required). Skipping Kalshi.")
+                return []
+                
             response.raise_for_status()
             data = response.json()
             
             normalized = []
-            # Kalshi API returns a 'markets' key containing a list of market objects
-            for item in data.get('markets', []):
-                # Check if the market is active and has binary outcomes (Yes/No)
-                # Kalshi markets typically have 'status' and 'yes_bid', 'no_bid' etc.
-                if item.get('status') == 'active' and item.get('market_type') == 'binary':
-                    try:
-                        # Kalshi prices are typically in cents, convert to dollars (0-1 range)
-                        yes_price = item.get('yes_bid') / 100.0 if item.get('yes_bid') is not None else 0.0
-                        no_price = item.get('no_bid') / 100.0 if item.get('no_bid') is not None else 0.0
-                        
-                        normalized_outcomes = [
-                            {'name': 'Yes', 'price': yes_price},
-                            {'name': 'No', 'price': no_price}
-                        ]
-
-                        normalized.append({
-                            'id': f"kalshi_{item.get('ticker')}",
-                            'source': 'kalshi',
-                            'question': item.get('title'),
-                            'outcomes': normalized_outcomes,
-                            'resolution_criteria': item.get('settlement_details', 'See market page.')
-                        })
-                    except Exception as e:
-                        print(f"Error processing Kalshi market {item.get('ticker')}: {e}")
-                        continue # Skip malformed items
-            
+            markets = data.get('markets', [])
+            for item in markets:
+                # Filter for binary markets
+                # Kalshi uses 'yes_bid', 'no_bid' etc.
+                normalized.append({
+                    'id': f"kalshi_{item.get('ticker')}",
+                    'source': 'kalshi',
+                    'question': item.get('title'),
+                    'outcomes': [
+                        {'name': 'Yes', 'price': (item.get('yes_bid', 0) / 100.0)},
+                        {'name': 'No', 'price': (item.get('no_bid', 0) / 100.0)}
+                    ],
+                    'resolution_criteria': item.get('rules_primary', 'See market page.')
+                })
             return normalized
         except Exception as e:
-            print(f"Error fetching Kalshi: {e}")
+            print(f"Error fetching Kalshi (skipping): {e}")
             return []
 
 class MarketAggregator:

@@ -106,6 +106,53 @@ class NLIEngine:
         content = response.choices[0].message.content
         return json.loads(content)
 
+    def check_resolution_nuance(self, market_a, market_b):
+        """
+        Checks if the resolution criteria of two markets are compatible for arbitrage.
+        Returns: { 'compatible': bool, 'risk_score': float (0-1), 'reason': str }
+        """
+        # Quick check for identical strings
+        res_a = market_a.get('resolution_criteria', '').strip()
+        res_b = market_b.get('resolution_criteria', '').strip()
+        
+        if res_a == res_b and res_a:
+             return {'compatible': True, 'risk_score': 0.0, 'reason': "Identical resolution rules."}
+
+        prompt = f"""
+        Compare the Resolution Criteria for these two prediction markets.
+        
+        Market A Resolution: "{res_a}"
+        Market B Resolution: "{res_b}"
+        
+        Are these compatible for arbitrage? 
+        - "Compatible" means they resolve based on the same underlying truth (e.g., both use AP Call or same Date).
+        - "Risky" means they use different sources (e.g., Fox vs CNN) or different dates (Inauguration vs Vote Certification).
+        
+        Output ONLY valid JSON:
+        {{
+            "compatible": true | false,
+            "risk_score": <float 0.0 (safe) to 1.0 (very risky)>,
+            "risk_factors": ["<factor1>", "<factor2>"],
+            "reason": "<brief explanation>"
+        }}
+        """
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a risk manager for prediction market arbitrage."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.0
+            )
+            content = response.choices[0].message.content
+            return json.loads(content)
+        except Exception as e:
+            print(f"Error in Resolution Check: {e}")
+            return {'compatible': False, 'risk_score': 1.0, 'reason': f"API Error: {e}"}
+
 # --- Demonstration ---
 if __name__ == "__main__":
     # Mock Data

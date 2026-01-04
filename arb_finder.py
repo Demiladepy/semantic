@@ -88,6 +88,17 @@ def main():
                 price_b = m_b['outcomes'][0]['price']
 
                 if rel == "entailment":
+                    # Check Resolution Risk before proceeding
+                    print(f"    Checking Resolution Nuance...")
+                    risk_analysis = engine.check_resolution_nuance(m_a, m_b)
+                    risk_score = risk_analysis.get('risk_score', 1.0)
+                    
+                    if risk_score > 0.3: # Threshold for "Safe" Arb
+                        print(f"    [SKIP] Resolution Risk too high ({risk_score}): {risk_analysis.get('reason')}")
+                        continue
+                        
+                    print(f"    [PASS] Resolution Risk: {risk_score}")
+
                     # If A implies B, then Price(A) should be <= Price(B)
                     # Arb opportunity: Price(A) > Price(B) (Buy B, Short A)
                     if direction == "A_implies_B":
