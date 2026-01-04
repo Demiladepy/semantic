@@ -20,17 +20,16 @@ class NLIEngine:
     def get_embeddings(self, texts):
         if not texts:
             return []
+        # OpenAI handles lists of strings
         try:
-            # OpenAI handles lists of strings
             response = self.client.embeddings.create(
                 input=texts,
                 model=self.embedding_model
             )
             return [data.embedding for data in response.data]
         except Exception as e:
-            print(f"Warning: Embedding API failed ({e}). Using mock embeddings.")
-            # Return random normalized vectors for demo
-            return [np.random.rand(1536).tolist() for _ in texts]
+            print(f"Error getting embeddings: {e}")
+            raise e
 
     def cluster_questions(self, markets, threshold=0.75):
         """
@@ -43,15 +42,10 @@ class NLIEngine:
         clusters = []
         visited = set()
         
-        # Ensure embeddings are valid for cosine_similarity
         if not embeddings:
             return []
 
-        try:
-            similarity_matrix = cosine_similarity(embeddings)
-        except Exception as e:
-             # Fallback if embeddings are weird
-            similarity_matrix = np.eye(len(questions))
+        similarity_matrix = cosine_similarity(embeddings)
         
         for i in range(len(markets)):
             if i in visited:
@@ -64,25 +58,13 @@ class NLIEngine:
                 if j in visited:
                     continue
                 
-                # If using random mock embeddings, everything might look dissimilar
-                # So we force some clustering for demo if we detected we are in mock mode?
-                # Actually, random vectors are nearly orthogonal, so similarity will be low.
-                # Let's just trust the matrix for now unless it's pure random.
                 if similarity_matrix[i][j] >= threshold:
                     cluster.append(markets[j])
                     visited.add(j)
             
             if len(cluster) > 1:
                 clusters.append(cluster)
-        
-        # Fallback: validation data clustering for demo (if random embedding failed to cluster)
-        if not clusters and len(markets) > 0:
-            # Check if we have our specific demo strings to force grouping
-            q_texts = [m['question'] for m in markets]
-            trump_indices = [i for i, q in enumerate(q_texts) if "Trump" in q or "Republican" in q or "Biden" in q]
-            if len(trump_indices) > 1:
-                clusters.append([markets[i] for i in trump_indices])
-
+                
         return clusters
 
     def check_entailment(self, market_a, market_b):
@@ -112,40 +94,17 @@ class NLIEngine:
         }}
         """
 
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a logical reasoning engine for prediction markets."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.0
-            )
-            content = response.choices[0].message.content
-            return json.loads(content)
-        except Exception as e:
-            print(f"Warning: NLI API failed ({e}). Using mock logic result.")
-            # Return plausible mock result for demo if data looks connected
-            qa = market_a['question'].lower()
-            qb = market_b['question'].lower()
-            
-            if "trump" in qa and "republican" in qb:
-                return {
-                    "relationship": "entailment",
-                    "direction": "A_implies_B",
-                    "confidence": 0.95,
-                    "reasoning": "Trump is the Republican nominee."
-                }
-            elif "biden" in qa and "trump" in qb:
-                 return {
-                    "relationship": "mutual_exclusivity",
-                    "direction": "symmetric",
-                    "confidence": 0.99,
-                    "reasoning": "Only one can win."
-                }
-            
-            return None
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a logical reasoning engine for prediction markets."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.0
+        )
+        content = response.choices[0].message.content
+        return json.loads(content)
 
 # --- Demonstration ---
 if __name__ == "__main__":
