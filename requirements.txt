@@ -1,0 +1,7 @@
+openai
+# sentence-transformers # Removed to avoid C++ redist issues
+scikit-learn
+numpy
+apscheduler
+requests
+python-dotenv

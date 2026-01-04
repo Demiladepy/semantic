@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+.DS_Store
+paper_trades.csv
+debug.log
+.venv/
+env/
