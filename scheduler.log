@@ -4,3 +4,7 @@
 2026-01-04 22:35:49,208 [INFO] Scan complete.
 2026-01-04 22:35:49,211 [INFO] Added job "job_wrapper" to job store "default"
 2026-01-04 22:35:49,211 [INFO] Scheduler started
+2026-01-04 22:40:46,533 [INFO] Running job "job_wrapper (trigger: interval[0:05:00], next run at: 2026-01-04 22:40:46 WAT)" (scheduled at 2026-01-04 22:40:46.520042+01:00)
+2026-01-04 22:40:46,541 [INFO] Starting scheduled scan...
+2026-01-04 22:40:49,952 [INFO] Scan complete.
+2026-01-04 22:40:49,952 [INFO] Job "job_wrapper (trigger: interval[0:05:00], next run at: 2026-01-04 22:45:46 WAT)" executed successfully
