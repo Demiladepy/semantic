@@ -5,3 +5,5 @@ numpy
 apscheduler
 requests
 python-dotenv
+websockets
+aiohttp

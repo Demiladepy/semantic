@@ -40,6 +40,80 @@ python arb_finder.py
 
 This project includes a complete implementation of AI agents that autonomously create prediction markets on PNP Exchange using privacy-focused tokens as collateral.
 
+### Real-Time Integration
+
+The project now includes **real-time integration** with the PNP SDK (see [PNP SDK Documentation](https://docs.pnp.exchange/api-reference/introduction)):
+
+- **WebSocket Support**: Real-time market updates, order fills, and price changes
+- **Event-Driven Architecture**: Register handlers for market and order events
+- **Seamless SDK Switching**: Automatically uses mock SDK for development, real SDK when API key is provided
+- **Auto-Reconnection**: Automatic WebSocket reconnection with exponential backoff
+
+**Quick Start with Real-Time:**
+```python
+from pnp_sdk_realtime import get_realtime_sdk, EventType, SDKMode
+import asyncio
+
+async def main():
+    # Initialize real-time SDK
+    sdk = get_realtime_sdk(
+        api_key="your-pnp-api-key",  # Optional: uses mock if not provided
+        mode=SDKMode.AUTO
+    )
+    
+    # Register event handlers
+    async def on_market_created(event):
+        print(f"Market created: {event.market_id}")
+    
+    sdk.on_event(EventType.MARKET_CREATED, on_market_created)
+    
+    # Connect to WebSocket
+    await sdk.connect()
+    
+    # Create market (triggers event)
+    result = sdk.create_market({
+        'question': 'Will AI achieve AGI by 2025?',
+        'outcomes': ['Yes', 'No'],
+        'collateral_token': 'ELUSIV',
+        'collateral_amount': 100.0
+    })
+    
+    # Subscribe to market updates
+    await sdk.subscribe_markets([result['market_id']])
+    
+    # Keep running to receive events
+    await asyncio.sleep(10)
+    
+    await sdk.disconnect()
+
+asyncio.run(main())
+```
+
+**Using the SDK Adapter:**
+```python
+from pnp_sdk_adapter import PNPSDKAdapter
+import asyncio
+
+async def main():
+    adapter = PNPSDKAdapter(
+        api_key="your-pnp-api-key",  # Optional
+        use_realtime=True
+    )
+    
+    await adapter.connect_realtime()
+    
+    # Use convenience methods
+    adapter.on_market_created(lambda e: print(f"Market: {e.market_id}"))
+    
+    # Create markets, place orders, etc.
+    market = adapter.create_market({...})
+    await adapter.subscribe_market(market['market_id'])
+
+asyncio.run(main())
+```
+
+See `pnp_realtime_example.py` for complete examples.
+
 ### Components
 
 #### 1. PNP AI Agent (`pnp_agent.py`)

@@ -18,7 +18,13 @@ except ImportError:
     print("Warning: openai package not installed. Install with: pip install openai")
     openai = None
 
-from pnp_sdk_mock import get_sdk
+try:
+    from pnp_sdk_adapter import get_sdk, PNPSDKAdapter
+    SDK_ADAPTER_AVAILABLE = True
+except ImportError:
+    from pnp_sdk_mock import get_sdk
+    SDK_ADAPTER_AVAILABLE = False
+    PNPSDKAdapter = None
 
 # Load environment variables
 load_dotenv()
@@ -57,7 +63,9 @@ class PNPAgent:
     def __init__(self, 
                  openai_api_key: Optional[str] = None,
                  default_collateral_token: str = 'ELUSIV',
-                 agent_id: Optional[str] = None):
+                 agent_id: Optional[str] = None,
+                 use_realtime: bool = False,
+                 pnp_api_key: Optional[str] = None):
         """
         Initialize the PNP Agent.
         
@@ -65,9 +73,20 @@ class PNPAgent:
             openai_api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
             default_collateral_token: Default privacy token to use (ELUSIV, LIGHT, or PNP)
             agent_id: Unique identifier for this agent instance
+            use_realtime: Whether to enable real-time WebSocket features
+            pnp_api_key: PNP Exchange API key (for real SDK when available)
         """
         self.agent_id = agent_id or f"PNP-Agent-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
-        self.sdk = get_sdk()
+        
+        # Use adapter if available, otherwise fall back to mock
+        if SDK_ADAPTER_AVAILABLE and use_realtime:
+            from pnp_sdk_adapter import PNPSDKAdapter
+            self.sdk = PNPSDKAdapter(api_key=pnp_api_key, use_realtime=True)
+            self.realtime_enabled = True
+        else:
+            self.sdk = get_sdk()
+            self.realtime_enabled = False
+        
         self.default_collateral_token = default_collateral_token.upper()
         
         # Validate collateral token
