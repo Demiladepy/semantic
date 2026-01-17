@@ -10,6 +10,14 @@ import os
 from typing import Dict, Any, List, Optional
 from pnp_sdk_realtime import PNPSDKRealtime, SDKMode, get_realtime_sdk
 
+# Try to import Node.js bridge (optional)
+try:
+    from pnp_sdk_nodejs_bridge import PNPSDKNodeJSBridge, get_nodejs_sdk
+    NODEJS_BRIDGE_AVAILABLE = True
+except ImportError:
+    NODEJS_BRIDGE_AVAILABLE = False
+    PNPSDKNodeJSBridge = None
+
 
 class PNPSDKAdapter:
     """
@@ -22,7 +30,8 @@ class PNPSDKAdapter:
     def __init__(self,
                  api_key: Optional[str] = None,
                  use_realtime: bool = True,
-                 mode: Optional[SDKMode] = None):
+                 mode: Optional[SDKMode] = None,
+                 use_nodejs_sdk: bool = False):
         """
         Initialize PNP SDK adapter.
         
@@ -30,48 +39,76 @@ class PNPSDKAdapter:
             api_key: PNP Exchange API key (from env or parameter)
             use_realtime: Whether to enable real-time WebSocket features
             mode: Force SDK mode (MOCK, REAL, or AUTO). Defaults to AUTO.
+            use_nodejs_sdk: Whether to use the npm pnp-sdk package via Node.js bridge
         """
         # Get API key from environment if not provided
         if not api_key:
             api_key = os.getenv('PNP_API_KEY') or os.getenv('PNP_EXCHANGE_API_KEY')
         
+        self.api_key = api_key
+        self.use_realtime = use_realtime
+        self.use_nodejs_sdk = use_nodejs_sdk
+        self._realtime_connected = False
+        
+        # Try to use Node.js SDK if requested and available
+        if use_nodejs_sdk and NODEJS_BRIDGE_AVAILABLE:
+            try:
+                self.nodejs_sdk = get_nodejs_sdk(api_key=api_key)
+                self.sdk_type = 'nodejs'
+                return
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to initialize Node.js SDK: {e}. Falling back to Python SDK.")
+                self.nodejs_sdk = None
+        
         # Determine mode
         if mode is None:
             mode = SDKMode.AUTO
         
-        # Initialize real-time SDK
+        # Initialize real-time SDK (Python)
         self.realtime_sdk = get_realtime_sdk(
             api_key=api_key,
             mode=mode
         )
-        
-        self.use_realtime = use_realtime
-        self._realtime_connected = False
+        self.sdk_type = 'python'
     
-    # Delegate all SDK methods to realtime_sdk
+    # Delegate all SDK methods to appropriate SDK
     
     def create_market(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Create a prediction market."""
+        if self.sdk_type == 'nodejs' and self.nodejs_sdk:
+            return self.nodejs_sdk.create_market(params)
         return self.realtime_sdk.create_market(params)
     
     def place_order(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Place an order."""
+        if self.sdk_type == 'nodejs' and self.nodejs_sdk:
+            return self.nodejs_sdk.place_order(params)
         return self.realtime_sdk.place_order(params)
     
     def settle_market(self, market_id: str, outcome: str, resolver: Optional[str] = None) -> Dict[str, Any]:
         """Settle a market."""
+        if self.sdk_type == 'nodejs' and self.nodejs_sdk:
+            return self.nodejs_sdk.settle_market(market_id, outcome, resolver)
         return self.realtime_sdk.settle_market(market_id, outcome, resolver)
     
     def get_market(self, market_id: str) -> Optional[Dict[str, Any]]:
         """Get market details."""
+        if self.sdk_type == 'nodejs' and self.nodejs_sdk:
+            return self.nodejs_sdk.get_market(market_id)
         return self.realtime_sdk.get_market(market_id)
     
     def list_markets(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """List markets."""
+        if self.sdk_type == 'nodejs' and self.nodejs_sdk:
+            return self.nodejs_sdk.list_markets(status)
         return self.realtime_sdk.list_markets(status)
     
     def get_orders(self, market_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get orders."""
+        if self.sdk_type == 'nodejs' and self.nodejs_sdk:
+            # Node.js SDK might not have this method yet
+            return []
         return self.realtime_sdk.get_orders(market_id)
     
     # Real-time methods

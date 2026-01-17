@@ -40,6 +40,34 @@ python arb_finder.py
 
 This project includes a complete implementation of AI agents that autonomously create prediction markets on PNP Exchange using privacy-focused tokens as collateral.
 
+### Installing the Official PNP SDK (npm package)
+
+To use the official `pnp-sdk` npm package:
+
+```bash
+# Install Node.js if not already installed (https://nodejs.org/)
+# Then install the SDK:
+cd plugin-polymarket
+npm install pnp-sdk
+```
+
+Or use the installation script:
+- **Linux/Mac**: `bash install_pnp_sdk.sh`
+- **Windows**: `powershell -ExecutionPolicy Bypass -File install_pnp_sdk.ps1`
+
+**Note:** The PNP SDK is currently "coming soon" according to the [official documentation](https://docs.pnp.exchange/api-reference/introduction). The API key generation page is not yet available. See `INSTALL_PNP_SDK.md` for detailed instructions.
+
+**Using the npm SDK from Python:**
+```python
+from pnp_sdk_adapter import PNPSDKAdapter
+
+# Use the official npm pnp-sdk package
+adapter = PNPSDKAdapter(
+    api_key="your-api-key",  # When available
+    use_nodejs_sdk=True      # Use npm package
+)
+```
+
 ### Real-Time Integration
 
 The project now includes **real-time integration** with the PNP SDK (see [PNP SDK Documentation](https://docs.pnp.exchange/api-reference/introduction)):
