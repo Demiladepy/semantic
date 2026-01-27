@@ -1,4 +1,4 @@
-# 🎯 Semantic Arbitrage Engine
+#  Semantic Arbitrage Engine
 
 > **AI-Powered Cross-Platform Prediction Market Arbitrage System**
 
@@ -10,7 +10,7 @@ A sophisticated Python-based arbitrage engine that identifies and exploits logic
 
 ---
 
-## 📑 Table of Contents
+##  Table of Contents
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
@@ -31,7 +31,7 @@ A sophisticated Python-based arbitrage engine that identifies and exploits logic
 
 ---
 
-## 🌟 Overview
+##  Overview
 
 The Semantic Arbitrage Engine is a cutting-edge trading system that:
 
@@ -51,39 +51,39 @@ Unlike traditional arbitrage systems that rely on exact market matching, this en
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
-### 🧠 **Intelligent Market Matching**
+###  **Intelligent Market Matching**
 - Natural Language Inference (NLI) for semantic question matching
 - Entailment and contradiction detection
 - Temporal proximity analysis
 - Confidence scoring and filtering
 
-### 💰 **Multi-Platform Arbitrage**
+###  **Multi-Platform Arbitrage**
 - **Polymarket** (Polygon blockchain)
 - **Kalshi** (CFTC-regulated exchange)
 - **PNP Exchange** (Solana-based prediction markets)
 - Cross-platform price comparison and execution
 
-### 🤖 **Automated Trading**
+###  **Automated Trading**
 - Atomic execution with rollback on failure
 - Slippage protection
 - Gas optimization
 - Position tracking and management
 
-### 📊 **Risk Management**
+###  **Risk Management**
 - Portfolio-level exposure limits
 - Per-market position sizing
 - Profit margin thresholds
 - Real-time P&L tracking
 
-### 🔔 **Real-Time Monitoring**
+###  **Real-Time Monitoring**
 - WebSocket integration for live updates
 - Telegram alerts for opportunities
 - Market event notifications
 - Error and execution alerts
 
-### 🔒 **Privacy & Security**
+###  **Privacy & Security**
 - Zero-knowledge proof support (PNP Exchange)
 - Encrypted market data
 - Anonymized trading (optional)
@@ -91,7 +91,7 @@ Unlike traditional arbitrage systems that rely on exact market matching, this en
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -140,7 +140,7 @@ Unlike traditional arbitrage systems that rely on exact market matching, this en
 
 ---
 
-## 🌐 Supported Platforms
+##  Supported Platforms
 
 ### 1. **Polymarket** 
 - **Blockchain**: Polygon (Layer 2)
@@ -164,7 +164,7 @@ Unlike traditional arbitrage systems that rely on exact market matching, this en
 
 ---
 
-## 📦 Installation
+##  Installation
 
 ### Prerequisites
 
@@ -201,7 +201,7 @@ Edit `.env` and add your API keys (see [Configuration](#-configuration)).
 
 ---
 
-## ⚙️ Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -288,7 +288,7 @@ See `API_KEYS_SETUP.md` for detailed instructions.
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Test Market Data Fetching
 
@@ -332,7 +332,7 @@ Launches a web dashboard for monitoring positions and P&L.
 
 ---
 
-## 🧩 Core Components
+##  Core Components
 
 ### 1. **Market Client** (`market_client.py`)
 
@@ -492,7 +492,7 @@ opportunities = client.find_arbitrage_opportunities(
 
 ---
 
-## 📖 Usage Examples
+##  Usage Examples
 
 ### Example 1: Simple Arbitrage Detection
 
@@ -507,7 +507,7 @@ opportunities = finder.find_opportunities()
 
 # Display results
 for opp in opportunities:
-    print(f"\n🎯 Arbitrage Opportunity:")
+    print(f"\n Arbitrage Opportunity:")
     print(f"   Question: {opp['question']}")
     print(f"   Profit: {opp['profit_pct']:.2f}%")
     print(f"   Buy {opp['side']} on {opp['buy_platform']} @ ${opp['buy_price']:.4f}")
@@ -527,7 +527,7 @@ bot = ExecutionBot(
 )
 
 # Run bot
-print("🤖 Starting arbitrage bot...")
+print(" Starting arbitrage bot...")
 bot.run()
 ```
 
@@ -597,7 +597,7 @@ for poly_market in poly_markets:
 
 ---
 
-## 🔬 Advanced Features
+##  Advanced Features
 
 ### 1. **Enhanced NLI Engine**
 
@@ -683,7 +683,7 @@ order = clob.place_limit_order(
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Unit Tests
 
@@ -720,7 +720,7 @@ python pnp_integration_example.py
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 ### Core Documentation
 - **API Keys Setup**: `API_KEYS_SETUP.md`
@@ -742,7 +742,7 @@ python pnp_integration_example.py
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -790,7 +790,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please follow these guidelines:
 
@@ -826,7 +826,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **OpenAI** for GPT models used in NLI
 - **Hugging Face** for transformer models
@@ -837,14 +837,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📞 Contact
+##  Contact
 
 - **GitHub**: [@Demiladepy](https://github.com/Demiladepy)
 - **Project**: [Semantic Arbitrage Engine](https://github.com/Demiladepy/semantic)
 
 ---
 
-## 🎯 Roadmap
+##  Roadmap
 
 ### Q1 2026
 - ✅ Multi-platform integration (Polymarket, Kalshi, PNP)
@@ -882,7 +882,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 This software is provided for educational and research purposes only. Trading prediction markets involves substantial risk of loss. The authors and contributors are not responsible for any financial losses incurred through the use of this software.
 
@@ -892,7 +892,6 @@ This software is provided for educational and research purposes only. Trading pr
 
 <div align="center">
 
-**Made with ❤️ by the Semantic Arbitrage Team**
 
 [⭐ Star this repo](https://github.com/Demiladepy/semantic) | [🐛 Report Bug](https://github.com/Demiladepy/semantic/issues) | [💡 Request Feature](https://github.com/Demiladepy/semantic/issues)
 
