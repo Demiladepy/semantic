@@ -35,3 +35,7 @@ pandas>=1.5.0
 
 # Type Safety
 pydantic>=2.0.0
+
+# Enhanced Features (New)
+pandas>=2.0.0  # For backtesting and data analysis
+scipy>=1.10.0  # For statistical analysis in backtesting
