@@ -1,41 +1,7 @@
-# Core ML & NLI
-openai
-scikit-learn
-numpy
-# sentence-transformers # Removed to avoid C++ redist issues
+# Minimal requirements for Streamlit Cloud deployment
+# Only includes packages needed for the dashboard
 
-# Scheduling & Async
-apscheduler
-websockets
-aiohttp
-
-# API & Networking
-requests
-python-dotenv
-
-# Blockchain - Polygon (Polymarket)
-web3>=6.0.0
-eth-account>=0.9.0
-eth-keys>=0.4.0
-eth-utils>=2.0.0
-
-# Blockchain - Solana (PNP Exchange)
-solana>=0.31.0
-spl-token>=0.3.0
-solders>=0.18.0
-anchorpy>=0.18.0
-
-# Trading & CLOB
-py-clob-client>=0.13.0
-
-# Dashboard
 streamlit>=1.28.0
 plotly>=5.17.0
-pandas>=1.5.0
-
-# Type Safety
-pydantic>=2.0.0
-
-# Enhanced Features (New)
-pandas>=2.0.0  # For backtesting and data analysis
-scipy>=1.10.0  # For statistical analysis in backtesting
+pandas>=2.0.0
+numpy>=1.24.0
