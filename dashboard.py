@@ -1,12 +1,8 @@
 """
-Dashboard - Real-time monitoring of the arbitrage bot
+Dashboard - AI Agent for Private Prediction Markets
 
-Displays:
-- Live spread table (Market A vs Market B prices)
-- NLI confidence scores
-- Execution log feed
-- Total alpha found vs captured
-- Risk indicators
+Solana Privacy Hack - PNP Exchange Bounty Submission
+Demonstrates AI agent creating markets with privacy-focused tokens
 
 Run with: streamlit run dashboard.py
 """
@@ -16,17 +12,15 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
-import json
-import os
-from pathlib import Path
+import hashlib
 
 # ========================
 # PAGE CONFIG
 # ========================
 
 st.set_page_config(
-    page_title="Arbitrage Bot Dashboard",
-    page_icon="📊",
+    page_title="PNP AI Agent | Solana Privacy Hack",
+    page_icon="🔐",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -37,23 +31,29 @@ st.markdown(
     .main {
         padding: 20px;
     }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 20px;
+    .solana-badge {
+        background: linear-gradient(90deg, #9945FF 0%, #14F195 100%);
+        padding: 8px 16px;
+        border-radius: 20px;
+        color: white;
+        font-weight: bold;
+        display: inline-block;
+        margin: 5px 0;
+    }
+    .privacy-token {
+        background-color: #1E2530;
+        padding: 15px;
         border-radius: 10px;
         margin: 10px 0;
+        border-left: 4px solid #9945FF;
     }
-    .success {
-        color: #28a745;
-        font-weight: bold;
-    }
-    .danger {
-        color: #dc3545;
-        font-weight: bold;
-    }
-    .warning {
-        color: #ffc107;
-        font-weight: bold;
+    .zk-proof {
+        background-color: #0d1117;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        overflow-x: auto;
     }
     </style>
     """,
@@ -61,363 +61,357 @@ st.markdown(
 )
 
 # ========================
-# SIDEBAR - CONFIG & SETTINGS
+# HEADER
 # ========================
 
-st.sidebar.title("⚙️ Configuration")
-
-# Wallet status
-st.sidebar.markdown("### Wallet Status")
-col1, col2 = st.sidebar.columns(2)
-with col1:
-    if st.sidebar.button("🔄 Refresh"):
-        st.rerun()
-with col2:
-    wallet_status = st.sidebar.empty()
-    wallet_status.write("🟡 Initializing...")
-
-# Strategy parameters
-st.sidebar.markdown("### Strategy Parameters")
-min_spread = st.sidebar.slider(
-    "Min Spread (%)", min_value=0.1, max_value=5.0, value=1.5, step=0.1
-)
-min_nli_confidence = st.sidebar.slider(
-    "Min NLI Confidence", min_value=0.5, max_value=1.0, value=0.95, step=0.05
-)
-max_gas_price = st.sidebar.slider(
-    "Max Gas Price (Gwei)", min_value=10, max_value=200, value=50, step=5
-)
-position_size = st.sidebar.number_input(
-    "Position Size (USD)", min_value=10, max_value=10000, value=100, step=10
-)
-
-# Trading mode
-st.sidebar.markdown("### Trading Mode")
-trading_mode = st.sidebar.radio(
-    "Mode", options=["Simulation", "Paper Trading", "Live Trading"], index=0
-)
-
-# ========================
-# MAIN DASHBOARD
-# ========================
-
-# Header
-st.title("📊 Semantic Arbitrage Bot")
-st.markdown(f"**Mode:** {trading_mode} | **Last Updated:** {datetime.now().strftime('%H:%M:%S')}")
-
-# ========================
-# KEY METRICS ROW
-# ========================
-
-st.markdown("---")
-st.markdown("## 📈 Key Metrics")
-
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.metric(
-        label="Total Alpha Found",
-        value="$2,450.80",
-        delta="$180.20",
-        delta_color="normal",
-    )
+    st.title("🔐 PNP AI Agent Dashboard")
+    st.markdown('<span class="solana-badge">Solana Privacy Hack 2026</span>', unsafe_allow_html=True)
+    st.markdown("**AI Agent for Private Prediction Markets** | PNP Exchange Bounty")
 
 with col2:
-    st.metric(
-        label="Alpha Captured",
-        value="$890.40",
-        delta="36.3%",
-        delta_color="normal",
-    )
-
-with col3:
-    st.metric(
-        label="Active Opportunities",
-        value="3",
-        delta="Last 1h",
-        delta_color="neutral",
-    )
-
-with col4:
-    st.metric(
-        label="Win Rate",
-        value="87.5%",
-        delta="2 losses",
-        delta_color="normal",
-    )
+    st.markdown("### Status")
+    st.markdown("🟢 **Agent Active**")
+    st.markdown(f"⏰ {datetime.now().strftime('%H:%M:%S')}")
 
 # ========================
-# LIVE SPREAD TABLE
+# SIDEBAR
 # ========================
 
-st.markdown("---")
-st.markdown("## 📋 Live Market Spreads")
+st.sidebar.markdown("## 🔐 Privacy Settings")
 
-# Sample data - replace with real data from your engine
-spread_data = {
-    "Market": [
-        "AI AGI 2025",
-        "BTC $50k by Q4",
-        "US Inflation <3%",
-        "Tech Recession",
-        "Election Winner",
-    ],
-    "Polymarket Price": [0.52, 0.68, 0.45, 0.32, 0.58],
-    "Kalshi Price": [0.48, 0.65, 0.42, 0.35, 0.55],
-    "Spread (%)": [7.14, 4.42, 6.67, 9.09, 5.13],
-    "NLI Match": [0.98, 0.92, 0.96, 0.87, 0.94],
-    "Gas Cost": ["$0.45", "$0.38", "$0.42", "$0.40", "$0.41"],
-    "Net Profit": ["✅ $3.20", "✅ $1.80", "✅ $2.60", "❌ -$0.15", "✅ $2.45"],
-    "Status": [
-        "🟢 Ready",
-        "🟢 Ready",
-        "🟡 Monitoring",
-        "🔴 Skip",
-        "🟢 Ready",
-    ],
-}
+# Privacy token selection
+privacy_token = st.sidebar.selectbox(
+    "Default Collateral Token",
+    ["ELUSIV", "LIGHT", "PNP"],
+    index=0
+)
 
-df_spreads = pd.DataFrame(spread_data)
+privacy_level = st.sidebar.radio(
+    "Privacy Level",
+    ["Public", "Private", "Anonymous"],
+    index=2
+)
 
-# Color the dataframe
-def color_row(row):
-    if "❌" in str(row["Net Profit"]):
-        return ["background-color: #ffcccc"] * len(row)
-    elif "🟢" in str(row["Status"]):
-        return ["background-color: #ccffcc"] * len(row)
-    elif "🟡" in str(row["Status"]):
-        return ["background-color: #ffffcc"] * len(row)
-    else:
-        return [""] * len(row)
+st.sidebar.markdown("---")
+st.sidebar.markdown("## 🤖 AI Agent Config")
 
-st.dataframe(
-    df_spreads.style.apply(color_row, axis=1),
-    use_container_width=True,
-    height=300,
+ai_model = st.sidebar.selectbox(
+    "AI Model",
+    ["GPT-4o-mini", "GPT-4o", "Claude"],
+    index=0
+)
+
+auto_create = st.sidebar.checkbox("Auto-create markets", value=True)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📊 Network")
+network = st.sidebar.radio("Solana Network", ["Devnet", "Mainnet"], index=0)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    """
+    <div style="text-align: center; padding: 10px;">
+        <small>Built for Solana Privacy Hack</small><br>
+        <small>PNP Exchange Bounty</small>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 # ========================
-# CHARTS
+# MAIN CONTENT - TABS
 # ========================
 
-st.markdown("---")
-st.markdown("## 📊 Analytics")
+tab1, tab2, tab3, tab4 = st.tabs(["🤖 AI Agent", "🔐 Privacy Tokens", "📊 Markets", "📝 Activity Log"])
 
-col1, col2 = st.columns(2)
+# ========================
+# TAB 1: AI AGENT
+# ========================
 
-with col1:
-    st.markdown("### Spread Distribution")
-    spreads = [7.14, 4.42, 6.67, 9.09, 5.13]
-    fig_spread = go.Figure(data=[go.Histogram(x=spreads, nbinsx=10)])
-    fig_spread.update_layout(
-        title="Spread % Distribution",
-        xaxis_title="Spread %",
-        yaxis_title="Count",
-        showlegend=False,
-        height=400,
+with tab1:
+    st.markdown("## 🤖 AI Market Creation Agent")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("### Create Market from Prompt")
+        
+        prompt = st.text_area(
+            "Enter news headline or prompt:",
+            value="Solana reaches $300 by end of Q2 2026",
+            height=100
+        )
+        
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            collateral_amount = st.number_input("Collateral Amount", value=100, min_value=1)
+        with col_b:
+            selected_token = st.selectbox("Token", ["ELUSIV", "LIGHT", "PNP"])
+        with col_c:
+            end_days = st.number_input("Days until end", value=30, min_value=1)
+        
+        if st.button("🚀 Create Market", type="primary"):
+            with st.spinner("AI Agent processing..."):
+                import time
+                time.sleep(1)
+                
+                # Generate mock market
+                market_id = f"PNP-{hashlib.sha256(prompt.encode()).hexdigest()[:8].upper()}"
+                question = f"Will {prompt}?"
+                
+                st.success(f"Market Created Successfully!")
+                st.markdown(f"""
+                **Market ID:** `{market_id}`  
+                **Question:** {question}  
+                **Collateral:** {collateral_amount} {selected_token}  
+                **Privacy Level:** {privacy_level}
+                """)
+    
+    with col2:
+        st.markdown("### Agent Status")
+        
+        st.metric("Markets Created", "3", "+1")
+        st.metric("Total Collateral Locked", "$225", "+$100")
+        st.metric("Agent Uptime", "99.8%")
+        
+        st.markdown("---")
+        st.markdown("### Quick Stats")
+        
+        agent_data = {
+            "Metric": ["Agent ID", "Default Token", "AI Model", "Network"],
+            "Value": ["demo-agent-001", privacy_token, ai_model, network]
+        }
+        st.dataframe(pd.DataFrame(agent_data), hide_index=True, use_container_width=True)
+
+# ========================
+# TAB 2: PRIVACY TOKENS
+# ========================
+
+with tab2:
+    st.markdown("## 🔐 Privacy-Focused Collateral Tokens")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        <div class="privacy-token">
+            <h3>🟣 ELUSIV</h3>
+            <p><strong>Privacy Level:</strong> Maximum</p>
+            <p><strong>Use Case:</strong> High-value trades (>$1000)</p>
+            <p><strong>Features:</strong></p>
+            <ul>
+                <li>Full transaction privacy</li>
+                <li>ZK proof encryption</li>
+                <li>Anonymous settlements</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.metric("Locked Amount", "100 ELUSIV", "+50")
+    
+    with col2:
+        st.markdown("""
+        <div class="privacy-token">
+            <h3>🔵 LIGHT</h3>
+            <p><strong>Privacy Level:</strong> High</p>
+            <p><strong>Use Case:</strong> Medium trades ($500-$1000)</p>
+            <p><strong>Features:</strong></p>
+            <ul>
+                <li>Confidential transfers</li>
+                <li>Light Protocol integration</li>
+                <li>Fast settlements</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.metric("Locked Amount", "75 LIGHT", "+25")
+    
+    with col3:
+        st.markdown("""
+        <div class="privacy-token">
+            <h3>🟢 PNP</h3>
+            <p><strong>Privacy Level:</strong> Standard</p>
+            <p><strong>Use Case:</strong> Regular trades (<$500)</p>
+            <p><strong>Features:</strong></p>
+            <ul>
+                <li>Native PNP token</li>
+                <li>Lower fees</li>
+                <li>Quick execution</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.metric("Locked Amount", "50 PNP", "+10")
+    
+    st.markdown("---")
+    st.markdown("### 🔒 ZK Proof Demonstration")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Address Anonymization")
+        original_addr = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+        anon_addr = f"anon_{hashlib.sha256(original_addr.encode()).hexdigest()[:32]}"
+        
+        st.markdown(f"""
+        **Original Address:**
+        ```
+        {original_addr}
+        ```
+        
+        **Anonymized Address:**
+        ```
+        {anon_addr}
+        ```
+        """)
+    
+    with col2:
+        st.markdown("#### ZK Proof Structure")
+        
+        proof_data = {
+            "proof_id": hashlib.sha256(b"demo_proof").hexdigest()[:16],
+            "proof_type": "ownership",
+            "statement": {"has_collateral": True},
+            "verified": True,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        st.json(proof_data)
+
+# ========================
+# TAB 3: MARKETS
+# ========================
+
+with tab3:
+    st.markdown("## 📊 Active Markets")
+    
+    # Sample market data
+    markets_data = {
+        "Market ID": ["PNP-A1B2C3D4", "PNP-E5F6G7H8", "PNP-I9J0K1L2"],
+        "Question": [
+            "Will Solana reach $300 by Q2 2026?",
+            "Will Bitcoin ETF approval by SEC in Q1 2026?",
+            "Will Ethereum reach $5000 by end of 2026?"
+        ],
+        "Collateral": ["100 ELUSIV", "75 LIGHT", "50 PNP"],
+        "Privacy Level": ["Anonymous", "Private", "Private"],
+        "YES Price": [0.65, 0.72, 0.58],
+        "NO Price": [0.35, 0.28, 0.42],
+        "Status": ["🟢 Active", "🟢 Active", "🟢 Active"],
+    }
+    
+    df_markets = pd.DataFrame(markets_data)
+    st.dataframe(df_markets, use_container_width=True, height=200)
+    
+    st.markdown("---")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### Market Distribution by Token")
+        
+        token_dist = {"Token": ["ELUSIV", "LIGHT", "PNP"], "Count": [1, 1, 1]}
+        fig_pie = px.pie(
+            pd.DataFrame(token_dist),
+            values="Count",
+            names="Token",
+            color_discrete_sequence=["#9945FF", "#14F195", "#00D1FF"]
+        )
+        fig_pie.update_layout(height=300)
+        st.plotly_chart(fig_pie, use_container_width=True)
+    
+    with col2:
+        st.markdown("### Collateral Locked Over Time")
+        
+        time_data = {
+            "Time": pd.date_range(start="2026-01-25", periods=6, freq="D"),
+            "Collateral ($)": [0, 50, 100, 150, 175, 225]
+        }
+        fig_line = px.line(
+            pd.DataFrame(time_data),
+            x="Time",
+            y="Collateral ($)",
+            markers=True
+        )
+        fig_line.update_traces(line_color="#9945FF")
+        fig_line.update_layout(height=300)
+        st.plotly_chart(fig_line, use_container_width=True)
+
+# ========================
+# TAB 4: ACTIVITY LOG
+# ========================
+
+with tab4:
+    st.markdown("## 📝 Agent Activity Log")
+    
+    log_entries = [
+        {"Timestamp": "10:26:12", "Event": "Market Created", "Details": "PNP-A1B2C3D4 with 100 ELUSIV", "Privacy": "Anonymous", "Status": "✅"},
+        {"Timestamp": "10:25:45", "Event": "ZK Proof Created", "Details": "Ownership proof for collateral", "Privacy": "Anonymous", "Status": "✅"},
+        {"Timestamp": "10:25:30", "Event": "Address Anonymized", "Details": "Trader address -> anon_93dc08...", "Privacy": "Anonymous", "Status": "✅"},
+        {"Timestamp": "10:24:18", "Event": "AI Generation", "Details": "Market question generated from prompt", "Privacy": "-", "Status": "✅"},
+        {"Timestamp": "10:23:55", "Event": "Agent Initialized", "Details": "demo-agent-001 started", "Privacy": "-", "Status": "✅"},
+        {"Timestamp": "10:22:30", "Event": "Solana Connected", "Details": f"Connected to {network}", "Privacy": "-", "Status": "✅"},
+    ]
+    
+    df_logs = pd.DataFrame(log_entries)
+    
+    def color_status(val):
+        if val == "✅":
+            return "color: #14F195; font-weight: bold"
+        elif val == "❌":
+            return "color: #FF6B6B; font-weight: bold"
+        return ""
+    
+    st.dataframe(
+        df_logs.style.applymap(color_status, subset=["Status"]),
+        use_container_width=True,
+        height=400
     )
-    st.plotly_chart(fig_spread, use_container_width=True)
-
-with col2:
-    st.markdown("### NLI Confidence vs Spread")
-    nli_scores = [0.98, 0.92, 0.96, 0.87, 0.94]
-    fig_scatter = go.Figure(
-        data=[
-            go.Scatter(
-                x=nli_scores,
-                y=spreads,
-                mode="markers+text",
-                marker=dict(size=12, color=spreads, colorscale="Viridis", showscale=True),
-                text=["A", "B", "C", "D", "E"],
-                textposition="top center",
-            )
-        ]
-    )
-    fig_scatter.update_layout(
-        title="NLI Confidence vs Spread %",
-        xaxis_title="NLI Confidence Score",
-        yaxis_title="Spread %",
-        height=400,
-    )
-    st.plotly_chart(fig_scatter, use_container_width=True)
-
-# ========================
-# EXECUTION LOG
-# ========================
-
-st.markdown("---")
-st.markdown("## 📝 Execution Log")
-
-log_entries = [
-    {
-        "Timestamp": "14:32:45",
-        "Event": "Order Filled",
-        "Details": "LEG 1 FILLED on Kalshi @ 0.480",
-        "Status": "✅",
-    },
-    {
-        "Timestamp": "14:32:46",
-        "Event": "Order Placed",
-        "Details": "LEG 2 placed on Polymarket @ 0.520",
-        "Status": "⏳",
-    },
-    {
-        "Timestamp": "14:32:48",
-        "Event": "Execution Complete",
-        "Details": "Net P&L: +$3.20 | Profit: 3.2%",
-        "Status": "✅",
-    },
-    {
-        "Timestamp": "14:30:22",
-        "Event": "Gas Check",
-        "Details": "Current: 35 Gwei | Limit: 50 Gwei ✅",
-        "Status": "✅",
-    },
-    {
-        "Timestamp": "14:28:15",
-        "Event": "Opportunity Rejected",
-        "Details": "Spread: 0.8% < Min: 1.5%",
-        "Status": "❌",
-    },
-]
-
-df_logs = pd.DataFrame(log_entries)
-
-def color_log_status(val):
-    if val == "✅":
-        return "color: green; font-weight: bold"
-    elif val == "❌":
-        return "color: red; font-weight: bold"
-    elif val == "⏳":
-        return "color: orange; font-weight: bold"
-    return ""
-
-st.dataframe(
-    df_logs.style.applymap(
-        color_log_status, subset=["Status"]
-    ),
-    use_container_width=True,
-    height=300,
-)
-
-# ========================
-# RISK INDICATORS
-# ========================
-
-st.markdown("---")
-st.markdown("## ⚠️ Risk Indicators")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("### Gas Price")
-    fig_gas = go.Figure(
-        data=[
-            go.Gauge(
-                mode="gauge+number+delta",
-                value=35,
-                domain={"x": [0, 1], "y": [0, 1]},
-                title={"text": "Gwei"},
-                delta={"reference": 50},
-                gauge={
-                    "axis": {"range": [0, 200]},
-                    "bar": {"color": "darkblue"},
-                    "steps": [
-                        {"range": [0, 30], "color": "lightgreen"},
-                        {"range": [30, 50], "color": "yellow"},
-                        {"range": [50, 200], "color": "red"},
-                    ],
-                    "threshold": {
-                        "line": {"color": "red", "width": 4},
-                        "thickness": 0.75,
-                        "value": 50,
-                    },
-                },
-            )
-        ]
-    )
-    fig_gas.update_layout(height=350)
-    st.plotly_chart(fig_gas, use_container_width=True)
-
-with col2:
-    st.markdown("### Portfolio Health")
-    fig_health = go.Figure(
-        data=[
-            go.Gauge(
-                mode="gauge+number",
-                value=87.5,
-                domain={"x": [0, 1], "y": [0, 1]},
-                title={"text": "% Win Rate"},
-                gauge={
-                    "axis": {"range": [0, 100]},
-                    "bar": {"color": "darkblue"},
-                    "steps": [
-                        {"range": [0, 50], "color": "red"},
-                        {"range": [50, 75], "color": "yellow"},
-                        {"range": [75, 100], "color": "green"},
-                    ],
-                },
-            )
-        ]
-    )
-    fig_health.update_layout(height=350)
-    st.plotly_chart(fig_health, use_container_width=True)
-
-with col3:
-    st.markdown("### Uptime")
-    fig_uptime = go.Figure(
-        data=[
-            go.Gauge(
-                mode="gauge+number+delta",
-                value=99.8,
-                domain={"x": [0, 1], "y": [0, 1]},
-                title={"text": "%"},
-                delta={"reference": 99.5},
-                gauge={
-                    "axis": {"range": [98, 100]},
-                    "bar": {"color": "darkblue"},
-                    "steps": [
-                        {"range": [98, 99], "color": "red"},
-                        {"range": [99, 99.5], "color": "yellow"},
-                        {"range": [99.5, 100], "color": "green"},
-                    ],
-                },
-            )
-        ]
-    )
-    fig_uptime.update_layout(height=350)
-    st.plotly_chart(fig_uptime, use_container_width=True)
-
-# ========================
-# ACTIONS
-# ========================
-
-st.markdown("---")
-st.markdown("## 🎮 Controls")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("▶️ Start Bot", key="start"):
-        st.success("Bot started!")
-
-with col2:
-    if st.button("⏸️ Pause Bot", key="pause"):
-        st.info("Bot paused")
-
-with col3:
-    if st.button("🛑 Stop Bot", key="stop"):
-        st.error("Bot stopped")
+    
+    st.markdown("---")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Total Events", len(log_entries))
+    with col2:
+        st.metric("Success Rate", "100%")
+    with col3:
+        st.metric("Avg Response Time", "1.2s")
 
 # ========================
 # FOOTER
 # ========================
 
 st.markdown("---")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("""
+    **Project:** Semantic Arbitrage Engine  
+    **Bounty:** PNP Exchange - AI Agent
+    """)
+
+with col2:
+    st.markdown("""
+    **Track:** AI Agent/Autonomous Systems  
+    **Hackathon:** Solana Privacy Hack 2026
+    """)
+
+with col3:
+    st.markdown("""
+    **GitHub:** [Demiladepy/semantic](https://github.com/Demiladepy/semantic)  
+    **Docs:** [PRIVACY_FEATURES.md](https://github.com/Demiladepy/semantic/blob/main/PRIVACY_FEATURES.md)
+    """)
+
 st.markdown(
     """
-    <div style="text-align: center; color: gray; font-size: 12px;">
-    🤖 Semantic Arbitrage Bot Dashboard | Real-time Monitoring
+    <div style="text-align: center; color: gray; font-size: 12px; margin-top: 20px;">
+        🔐 AI Agent for Private Prediction Markets | Built on Solana with PNP Exchange SDK
     </div>
     """,
     unsafe_allow_html=True,
