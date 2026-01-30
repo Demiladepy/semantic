@@ -7,6 +7,22 @@ A sophisticated Python-based arbitrage engine that identifies and exploits logic
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Production Ready](https://img.shields.io/badge/status-production%20ready-green.svg)]()
+[![Solana](https://img.shields.io/badge/Solana-Privacy%20Hack-9945FF.svg)](https://solana.com/privacyhack)
+
+---
+
+## Solana Privacy Hack Submission
+
+**Bounty Track**: PNP Exchange - AI Agent/Autonomous Systems
+
+This project is a submission for the [Solana Privacy Hack](https://solana.com/privacyhack) hackathon, targeting the **PNP Exchange bounty** for building AI agents that create prediction markets using privacy-focused tokens as collateral.
+
+**Key Features for Bounty**:
+- **AI Agent Market Creation** (`pnp_agent.py`) - Autonomous market generation from prompts
+- **Privacy Token Collateral** - ELUSIV, LIGHT, and PNP token support
+- **Privacy-Preserving Operations** - Address anonymization and ZK proof framework
+
+See [PRIVACY_FEATURES.md](PRIVACY_FEATURES.md) for detailed privacy implementation documentation.
 
 ---
 
