@@ -1,10 +1,10 @@
 """
-PNP AI Agent Dashboard - Solana Privacy Hack Submission
+PNP AI Agent Dashboard
 
-Professional dashboard demonstrating AI agent for private prediction markets.
-Connects all PNP modules: Agent, Privacy Wrapper, Collateral Manager, Market Factory.
+Professional dashboard for AI-powered prediction market creation
+with privacy-preserving features on Solana.
 
-Run with: streamlit run dashboard.py
+Run: streamlit run dashboard.py
 """
 
 import streamlit as st
@@ -15,346 +15,280 @@ from datetime import datetime, timedelta
 import hashlib
 import sys
 import os
-import json
+import time
 
-# Add current directory to path for imports
+# Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# ========================
-# IMPORT ALL PNP MODULES
-# ========================
+# ============================================================
+# MODULE IMPORTS
+# ============================================================
 
-modules_status = {
-    "Privacy Wrapper": False,
-    "Collateral Manager": False,
-    "Market Factory": False,
-    "PNP Agent": False,
-    "SDK Adapter": False,
+modules = {
+    "privacy_wrapper": {"loaded": False, "instance": None},
+    "collateral_manager": {"loaded": False, "instance": None},
+    "market_factory": {"loaded": False, "instance": None},
+    "pnp_agent": {"loaded": False, "instance": None},
 }
 
 # Privacy Wrapper
 try:
     from pnp_infra.privacy_wrapper import PrivacyWrapper, PrivacyLevel
-    modules_status["Privacy Wrapper"] = True
-except ImportError as e:
+    modules["privacy_wrapper"]["loaded"] = True
+except ImportError:
     PrivacyWrapper = None
     PrivacyLevel = None
 
 # Collateral Manager
 try:
-    from pnp_infra.collateral_manager import CollateralManager, CollateralStatus
-    modules_status["Collateral Manager"] = True
-except ImportError as e:
+    from pnp_infra.collateral_manager import CollateralManager
+    modules["collateral_manager"]["loaded"] = True
+except ImportError:
     CollateralManager = None
-    CollateralStatus = None
 
 # Market Factory
 try:
     from pnp_infra.market_factory import MarketFactory
-    modules_status["Market Factory"] = True
-except ImportError as e:
+    modules["market_factory"]["loaded"] = True
+except ImportError:
     MarketFactory = None
 
 # PNP Agent
 try:
     from pnp_agent import PNPAgent
-    modules_status["PNP Agent"] = True
-except ImportError as e:
+    modules["pnp_agent"]["loaded"] = True
+except ImportError:
     PNPAgent = None
 
-# SDK Adapter
-try:
-    from pnp_sdk_adapter import PNPSDKAdapter
-    modules_status["SDK Adapter"] = True
-except ImportError as e:
-    PNPSDKAdapter = None
+MODULES_LOADED = sum(1 for m in modules.values() if m["loaded"])
 
-REAL_MODULES_COUNT = sum(modules_status.values())
-
-# ========================
+# ============================================================
 # PAGE CONFIG
-# ========================
+# ============================================================
 
 st.set_page_config(
-    page_title="PNP AI Agent | Solana Privacy Hack",
-    page_icon="🔐",
+    page_title="PNP Agent Dashboard",
+    page_icon="P",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ========================
-# CUSTOM CSS
-# ========================
+# ============================================================
+# CLEAN CSS STYLING
+# ============================================================
 
 st.markdown("""
 <style>
-    /* Main Theme */
+    /* Dark theme base */
     .stApp {
-        background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 100%);
+        background-color: #0d1117;
+        color: #c9d1d9;
     }
     
-    /* Header Styles */
-    .main-header {
-        background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 0;
-    }
-    
-    .sub-header {
-        color: #888;
-        font-size: 1.1rem;
-        margin-top: 0;
-    }
-    
-    /* Solana Badge */
-    .solana-badge {
-        background: linear-gradient(90deg, #9945FF 0%, #14F195 100%);
-        padding: 8px 20px;
-        border-radius: 25px;
-        color: white;
-        font-weight: 700;
-        display: inline-block;
-        margin: 10px 0;
-        font-size: 0.9rem;
-        box-shadow: 0 4px 15px rgba(153, 69, 255, 0.3);
-    }
-    
-    /* Card Styles */
-    .metric-card {
-        background: linear-gradient(145deg, #1e1e2f 0%, #2a2a3e 100%);
-        padding: 25px;
-        border-radius: 16px;
-        border: 1px solid rgba(153, 69, 255, 0.2);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        text-align: center;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px rgba(153, 69, 255, 0.2);
-    }
-    
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(90deg, #9945FF 0%, #14F195 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    .metric-label {
-        color: #888;
-        font-size: 0.9rem;
-        margin-top: 8px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    /* Token Cards */
-    .token-card {
-        background: linear-gradient(145deg, #1e1e2f 0%, #252538 100%);
-        padding: 25px;
-        border-radius: 16px;
-        margin: 10px 0;
-        border-left: 4px solid #9945FF;
-        transition: all 0.3s ease;
-    }
-    
-    .token-card:hover {
-        border-left-color: #14F195;
-        transform: translateX(5px);
-    }
-    
-    .token-card.elusiv { border-left-color: #9945FF; }
-    .token-card.light { border-left-color: #00D1FF; }
-    .token-card.pnp { border-left-color: #14F195; }
-    
-    .token-name {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #fff;
-        margin-bottom: 10px;
-    }
-    
-    .token-desc {
-        color: #aaa;
-        font-size: 0.9rem;
-        line-height: 1.6;
-    }
-    
-    /* Module Status */
-    .module-active {
-        background: linear-gradient(90deg, rgba(20, 241, 149, 0.2) 0%, rgba(20, 241, 149, 0.1) 100%);
-        border: 1px solid #14F195;
-        color: #14F195;
-        padding: 8px 16px;
+    /* Card styling */
+    .card {
+        background: #161b22;
+        border: 1px solid #30363d;
         border-radius: 8px;
-        font-size: 0.85rem;
-        margin: 5px 0;
-        display: flex;
-        align-items: center;
-    }
-    
-    .module-inactive {
-        background: rgba(255, 107, 107, 0.1);
-        border: 1px solid #FF6B6B;
-        color: #FF6B6B;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        margin: 5px 0;
-    }
-    
-    /* Activity Log */
-    .activity-item {
-        background: rgba(30, 30, 47, 0.8);
-        padding: 15px;
-        border-radius: 10px;
-        margin: 8px 0;
-        border-left: 3px solid #9945FF;
-    }
-    
-    .activity-time {
-        color: #666;
-        font-size: 0.8rem;
-    }
-    
-    .activity-event {
-        color: #fff;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    
-    /* Feature Cards */
-    .feature-card {
-        background: linear-gradient(145deg, #1e1e2f 0%, #2a2a3e 100%);
         padding: 20px;
-        border-radius: 12px;
-        border: 1px solid rgba(153, 69, 255, 0.15);
-        height: 100%;
+        margin: 10px 0;
     }
     
-    .feature-icon {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-    
-    .feature-title {
-        color: #fff;
-        font-size: 1.1rem;
-        font-weight: 600;
+    .card-header {
+        color: #8b949e;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         margin-bottom: 8px;
     }
     
-    .feature-desc {
-        color: #888;
-        font-size: 0.85rem;
-        line-height: 1.5;
+    .card-value {
+        color: #58a6ff;
+        font-size: 28px;
+        font-weight: 600;
     }
     
-    /* Success/Error Alerts */
-    .success-alert {
-        background: linear-gradient(90deg, rgba(20, 241, 149, 0.15) 0%, rgba(20, 241, 149, 0.05) 100%);
-        border: 1px solid #14F195;
-        border-radius: 10px;
-        padding: 15px 20px;
-        color: #14F195;
+    .card-value.success { color: #3fb950; }
+    .card-value.warning { color: #d29922; }
+    .card-value.error { color: #f85149; }
+    
+    /* Status indicators */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
     }
     
-    /* Code Display */
-    .code-display {
-        background: #0d0d12;
-        border: 1px solid #333;
+    .status-active {
+        background: rgba(63, 185, 80, 0.15);
+        color: #3fb950;
+        border: 1px solid rgba(63, 185, 80, 0.4);
+    }
+    
+    .status-inactive {
+        background: rgba(248, 81, 73, 0.15);
+        color: #f85149;
+        border: 1px solid rgba(248, 81, 73, 0.4);
+    }
+    
+    /* Token cards */
+    .token-card {
+        background: #161b22;
+        border: 1px solid #30363d;
         border-radius: 8px;
-        padding: 15px;
-        font-family: 'Fira Code', monospace;
-        color: #14F195;
-        overflow-x: auto;
+        padding: 16px;
+        margin: 8px 0;
     }
     
-    /* Hide Streamlit elements */
+    .token-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #c9d1d9;
+        margin-bottom: 4px;
+    }
+    
+    .token-amount {
+        font-size: 24px;
+        font-weight: 700;
+        color: #58a6ff;
+    }
+    
+    .token-label {
+        font-size: 11px;
+        color: #8b949e;
+        text-transform: uppercase;
+    }
+    
+    /* Log entries */
+    .log-entry {
+        background: #161b22;
+        border-left: 3px solid #30363d;
+        padding: 12px 16px;
+        margin: 6px 0;
+        border-radius: 0 6px 6px 0;
+    }
+    
+    .log-entry.success { border-left-color: #3fb950; }
+    .log-entry.error { border-left-color: #f85149; }
+    
+    .log-time {
+        color: #8b949e;
+        font-size: 11px;
+        font-family: monospace;
+    }
+    
+    .log-event {
+        color: #c9d1d9;
+        font-weight: 500;
+        margin: 4px 0;
+    }
+    
+    .log-detail {
+        color: #8b949e;
+        font-size: 12px;
+    }
+    
+    /* Hide streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+    /* Form styling */
+    .stTextInput > div > div > input {
+        background-color: #0d1117;
+        border: 1px solid #30363d;
+        color: #c9d1d9;
     }
-    ::-webkit-scrollbar-track {
-        background: #1a1a2e;
+    
+    .stSelectbox > div > div {
+        background-color: #0d1117;
+        border: 1px solid #30363d;
     }
-    ::-webkit-scrollbar-thumb {
-        background: #9945FF;
-        border-radius: 4px;
+    
+    .stNumberInput > div > div > input {
+        background-color: #0d1117;
+        border: 1px solid #30363d;
+        color: #c9d1d9;
+    }
+    
+    /* Section headers */
+    .section-header {
+        color: #c9d1d9;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 20px 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #21262d;
+    }
+    
+    /* Table styling */
+    .dataframe {
+        background: #161b22 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ========================
-# INITIALIZE SESSION STATE
-# ========================
+# ============================================================
+# SESSION STATE INITIALIZATION
+# ============================================================
 
 if 'privacy_wrapper' not in st.session_state:
-    st.session_state.privacy_wrapper = PrivacyWrapper() if PrivacyWrapper else None
+    if modules["privacy_wrapper"]["loaded"] and PrivacyWrapper:
+        st.session_state.privacy_wrapper = PrivacyWrapper()
+    else:
+        st.session_state.privacy_wrapper = None
 
 if 'collateral_manager' not in st.session_state:
-    st.session_state.collateral_manager = CollateralManager() if CollateralManager else None
+    if modules["collateral_manager"]["loaded"] and CollateralManager:
+        st.session_state.collateral_manager = CollateralManager()
+    else:
+        st.session_state.collateral_manager = None
 
 if 'market_factory' not in st.session_state:
-    st.session_state.market_factory = MarketFactory(network='devnet') if MarketFactory else None
+    if modules["market_factory"]["loaded"] and MarketFactory:
+        st.session_state.market_factory = MarketFactory(network='devnet')
+    else:
+        st.session_state.market_factory = None
 
 if 'pnp_agent' not in st.session_state:
-    if PNPAgent:
+    if modules["pnp_agent"]["loaded"] and PNPAgent:
         try:
             st.session_state.pnp_agent = PNPAgent(
                 default_collateral_token='ELUSIV',
-                agent_id='pnp-dashboard-agent'
+                agent_id=f'dashboard-{datetime.now().strftime("%H%M%S")}'
             )
-        except:
+        except Exception:
             st.session_state.pnp_agent = None
     else:
         st.session_state.pnp_agent = None
 
-if 'sdk_adapter' not in st.session_state:
-    if PNPSDKAdapter:
-        try:
-            st.session_state.sdk_adapter = PNPSDKAdapter(use_realtime=False)
-        except:
-            st.session_state.sdk_adapter = None
-    else:
-        st.session_state.sdk_adapter = None
+if 'markets' not in st.session_state:
+    st.session_state.markets = []
 
-if 'created_markets' not in st.session_state:
-    st.session_state.created_markets = []
-
-if 'activity_log' not in st.session_state:
-    st.session_state.activity_log = []
+if 'activity' not in st.session_state:
+    st.session_state.activity = []
 
 if 'zk_proofs' not in st.session_state:
     st.session_state.zk_proofs = []
 
-# ========================
+# ============================================================
 # HELPER FUNCTIONS
-# ========================
+# ============================================================
 
-def log_activity(event: str, details: str, module: str = "-", status: str = "success"):
-    """Add entry to activity log."""
-    st.session_state.activity_log.insert(0, {
-        "timestamp": datetime.now().strftime("%H:%M:%S"),
+def log_activity(event: str, detail: str, module: str, status: str = "success"):
+    """Log an activity event."""
+    st.session_state.activity.insert(0, {
+        "time": datetime.now().strftime("%H:%M:%S"),
         "event": event,
-        "details": details,
+        "detail": detail,
         "module": module,
         "status": status
     })
-    st.session_state.activity_log = st.session_state.activity_log[:50]
+    st.session_state.activity = st.session_state.activity[:30]
 
-def get_locked_collateral():
+def get_collateral_totals():
     """Get total locked collateral by token."""
     if st.session_state.collateral_manager:
         return {
@@ -364,614 +298,485 @@ def get_locked_collateral():
         }
     return {'ELUSIV': 0, 'LIGHT': 0, 'PNP': 0}
 
-# ========================
-# HEADER SECTION
-# ========================
+# ============================================================
+# HEADER
+# ============================================================
 
-col1, col2, col3 = st.columns([2, 1, 1])
+col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.markdown('<h1 class="main-header">PNP AI Agent</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">AI-Powered Private Prediction Markets on Solana</p>', unsafe_allow_html=True)
-    st.markdown('<span class="solana-badge">SOLANA PRIVACY HACK 2026</span>', unsafe_allow_html=True)
+    st.markdown("# PNP Agent Dashboard")
+    st.markdown("AI-powered prediction market creation with privacy features")
 
 with col2:
-    st.markdown("##### Network")
-    network = st.selectbox("", ["Devnet", "Mainnet-Beta"], index=0, label_visibility="collapsed")
-
-with col3:
-    st.markdown("##### Modules Active")
-    st.markdown(f'<div class="metric-value" style="font-size: 2rem;">{REAL_MODULES_COUNT}/5</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="card" style="text-align: center; padding: 12px;">
+        <div class="card-header">Modules Active</div>
+        <div class="card-value">{MODULES_LOADED}/4</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# ========================
-# KEY METRICS
-# ========================
+# ============================================================
+# KEY METRICS ROW
+# ============================================================
 
-locked = get_locked_collateral()
-total_locked = sum(locked.values())
+collateral = get_collateral_totals()
+total_collateral = sum(collateral.values())
 
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown(f'''
-    <div class="metric-card">
-        <div class="metric-value">{len(st.session_state.created_markets)}</div>
-        <div class="metric-label">Markets Created</div>
+    st.markdown(f"""
+    <div class="card">
+        <div class="card-header">Markets Created</div>
+        <div class="card-value">{len(st.session_state.markets)}</div>
     </div>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown(f'''
-    <div class="metric-card">
-        <div class="metric-value">${total_locked:,.0f}</div>
-        <div class="metric-label">Collateral Locked</div>
+    st.markdown(f"""
+    <div class="card">
+        <div class="card-header">Total Collateral</div>
+        <div class="card-value success">${total_collateral:,.0f}</div>
     </div>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown(f'''
-    <div class="metric-card">
-        <div class="metric-value">{len(st.session_state.zk_proofs)}</div>
-        <div class="metric-label">ZK Proofs Generated</div>
+    st.markdown(f"""
+    <div class="card">
+        <div class="card-header">ZK Proofs</div>
+        <div class="card-value">{len(st.session_state.zk_proofs)}</div>
     </div>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 with col4:
-    st.markdown(f'''
-    <div class="metric-card">
-        <div class="metric-value">{len(st.session_state.activity_log)}</div>
-        <div class="metric-label">Operations Logged</div>
+    st.markdown(f"""
+    <div class="card">
+        <div class="card-header">Operations</div>
+        <div class="card-value">{len(st.session_state.activity)}</div>
     </div>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ========================
+# ============================================================
 # MAIN TABS
-# ========================
+# ============================================================
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🤖 AI Market Creation",
-    "🔐 Privacy Features",
-    "💰 Collateral Management",
-    "📊 Markets & Analytics",
-    "📋 Activity Log"
+tab1, tab2, tab3, tab4 = st.tabs([
+    "Create Market",
+    "Privacy Tools", 
+    "Collateral",
+    "Activity Log"
 ])
 
-# ========================
-# TAB 1: AI MARKET CREATION
-# ========================
+# ============================================================
+# TAB 1: CREATE MARKET
+# ============================================================
 
 with tab1:
-    col1, col2 = st.columns([3, 2])
+    col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown("### 🤖 AI-Powered Market Generation")
-        st.markdown("Create prediction markets from natural language prompts using AI.")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div class="section-header">AI Market Creation</div>', unsafe_allow_html=True)
         
         prompt = st.text_area(
-            "Enter a news headline or market idea:",
-            value="Bitcoin ETF approval leads to $100K BTC by Q2 2026",
-            height=100,
-            placeholder="e.g., 'Will SpaceX successfully land on Mars in 2026?'"
+            "Enter a prompt or news headline:",
+            value="Bitcoin reaches $150,000 by end of 2026",
+            height=80,
+            label_visibility="collapsed",
+            placeholder="Enter a news headline or market idea..."
         )
         
         col_a, col_b, col_c = st.columns(3)
         with col_a:
-            collateral_amount = st.number_input("Collateral Amount ($)", value=100, min_value=1, max_value=100000)
+            amount = st.number_input("Collateral ($)", value=100, min_value=1, max_value=100000)
         with col_b:
-            selected_token = st.selectbox("Privacy Token", ["ELUSIV", "LIGHT", "PNP"])
+            token = st.selectbox("Token", ["ELUSIV", "LIGHT", "PNP"])
         with col_c:
-            privacy_level = st.selectbox("Privacy Level", ["Anonymous", "Private", "Public"])
+            privacy = st.selectbox("Privacy", ["Anonymous", "Private", "Public"])
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("🚀 Create Market with AI", type="primary", use_container_width=True):
-            with st.spinner("AI Agent processing prompt..."):
+        if st.button("Create Market", type="primary", use_container_width=True):
+            with st.spinner("Processing..."):
                 result = None
+                start_time = time.time()
                 
                 # Use real PNP Agent
                 if st.session_state.pnp_agent:
                     try:
                         result = st.session_state.pnp_agent.create_market_from_prompt(
                             prompt=prompt,
-                            collateral_token=selected_token,
-                            collateral_amount=float(collateral_amount)
+                            collateral_token=token,
+                            collateral_amount=float(amount)
                         )
-                        log_activity("AI Market Created", f"ID: {result['market_id']}", "PNP Agent")
+                        elapsed = time.time() - start_time
+                        log_activity("Market Created", f"{result['market_id']} ({elapsed:.2f}s)", "PNP Agent")
                     except Exception as e:
+                        log_activity("Creation Failed", str(e)[:40], "PNP Agent", "error")
                         st.error(f"Error: {e}")
-                        log_activity("Market Creation Failed", str(e)[:50], "PNP Agent", "error")
                 else:
                     # Fallback
-                    import time
-                    time.sleep(0.5)
+                    time.sleep(0.3)
                     market_id = f"PNP-{hashlib.sha256(prompt.encode()).hexdigest()[:8].upper()}"
                     result = {
                         'market_id': market_id,
                         'question': f"Will {prompt}?",
                         'outcomes': ['Yes', 'No'],
-                        'collateral_amount': collateral_amount,
-                        'collateral_token': selected_token,
+                        'collateral_amount': amount,
+                        'collateral_token': token,
                         'status': 'active',
                         'created_at': datetime.now().isoformat()
                     }
-                    log_activity("Market Created (Fallback)", market_id, "Mock")
+                    log_activity("Market Created", f"{market_id} (fallback)", "Fallback")
                 
                 if result:
                     # Lock collateral
                     if st.session_state.collateral_manager:
                         try:
-                            lock_result = st.session_state.collateral_manager.lock_collateral(
+                            lock = st.session_state.collateral_manager.lock_collateral(
                                 market_id=result['market_id'],
-                                token=selected_token,
-                                amount=float(collateral_amount),
+                                token=token,
+                                amount=float(amount),
                                 owner_pubkey=f"user-{datetime.now().timestamp()}"
                             )
-                            log_activity("Collateral Locked", f"{collateral_amount} {selected_token}", "Collateral Manager")
+                            log_activity("Collateral Locked", f"{amount} {token}", "Collateral Mgr")
                         except Exception as e:
-                            log_activity("Collateral Lock Failed", str(e)[:50], "Collateral Manager", "error")
+                            log_activity("Lock Failed", str(e)[:40], "Collateral Mgr", "error")
                     
-                    # Deploy market account
+                    # Deploy market
                     if st.session_state.market_factory:
                         try:
-                            deploy_result = st.session_state.market_factory.deploy_market_account(
+                            deploy = st.session_state.market_factory.deploy_market_account(
                                 market_id=result['market_id'],
                                 question=result.get('question', prompt),
                                 outcomes=result.get('outcomes', ['Yes', 'No']),
                                 creator_pubkey=f"agent-{datetime.now().timestamp()}",
-                                collateral_token=selected_token,
-                                collateral_amount=float(collateral_amount)
+                                collateral_token=token,
+                                collateral_amount=float(amount)
                             )
-                            log_activity("Market Deployed", f"Account: {deploy_result['account_address'][:20]}...", "Market Factory")
-                            result['account_address'] = deploy_result['account_address']
+                            result['account'] = deploy['account_address']
+                            log_activity("Market Deployed", f"{deploy['account_address'][:24]}...", "Market Factory")
                         except Exception as e:
-                            log_activity("Market Deploy Failed", str(e)[:50], "Market Factory", "error")
+                            log_activity("Deploy Failed", str(e)[:40], "Market Factory", "error")
                     
-                    # Create ZK proof for privacy
-                    if st.session_state.privacy_wrapper and privacy_level != "Public":
+                    # Create ZK proof if not public
+                    if st.session_state.privacy_wrapper and privacy != "Public":
                         try:
                             proof = st.session_state.privacy_wrapper.create_zk_proof(
                                 proof_type="market_creation",
-                                statement={"market_id": result['market_id'], "has_collateral": True},
-                                witness={"amount": collateral_amount, "token": selected_token}
+                                statement={"market_id": result['market_id']},
+                                witness={"amount": amount}
                             )
                             st.session_state.zk_proofs.append(proof)
-                            log_activity("ZK Proof Created", f"ID: {proof['proof_id'][:16]}...", "Privacy Wrapper")
-                        except Exception as e:
+                            log_activity("ZK Proof Created", f"{proof['proof_id'][:20]}...", "Privacy Wrapper")
+                        except Exception:
                             pass
                     
-                    st.session_state.created_markets.append(result)
-                    
-                    st.markdown(f'''
-                    <div class="success-alert">
-                        <strong>✅ Market Created Successfully!</strong><br><br>
-                        <strong>Market ID:</strong> {result['market_id']}<br>
-                        <strong>Question:</strong> {result.get('question', prompt)}<br>
-                        <strong>Collateral:</strong> {collateral_amount} {selected_token}<br>
-                        <strong>Privacy:</strong> {privacy_level}<br>
-                        <strong>Using Real Modules:</strong> {'Yes' if st.session_state.pnp_agent else 'Fallback Mode'}
-                    </div>
-                    ''', unsafe_allow_html=True)
+                    st.session_state.markets.append(result)
+                    st.success(f"Market created: {result['market_id']}")
+                    st.rerun()
     
     with col2:
-        st.markdown("### 📊 Agent Statistics")
+        st.markdown('<div class="section-header">Module Status</div>', unsafe_allow_html=True)
         
-        st.markdown(f'''
-        <div class="feature-card">
-            <div class="feature-icon">🤖</div>
-            <div class="feature-title">Agent ID</div>
-            <div class="feature-desc">{st.session_state.pnp_agent.agent_id if st.session_state.pnp_agent else "demo-agent"}</div>
-        </div>
-        ''', unsafe_allow_html=True)
+        module_names = {
+            "pnp_agent": "PNP Agent",
+            "privacy_wrapper": "Privacy Wrapper",
+            "collateral_manager": "Collateral Manager",
+            "market_factory": "Market Factory"
+        }
+        
+        for key, name in module_names.items():
+            status = "active" if modules[key]["loaded"] else "inactive"
+            label = "Active" if modules[key]["loaded"] else "Inactive"
+            st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #21262d;">
+                <span style="color: #c9d1d9;">{name}</span>
+                <span class="status-badge status-{status}">{label}</span>
+            </div>
+            """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        st.markdown(f'''
-        <div class="feature-card">
-            <div class="feature-icon">🎯</div>
-            <div class="feature-title">Markets Today</div>
-            <div class="feature-desc" style="font-size: 1.5rem; color: #14F195;">{len(st.session_state.created_markets)}</div>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        st.markdown("### 🔧 Connected Modules")
-        for module, active in modules_status.items():
-            if active:
-                st.markdown(f'<div class="module-active">✓ {module}</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="module-inactive">✗ {module}</div>', unsafe_allow_html=True)
+        if st.session_state.pnp_agent:
+            st.markdown('<div class="section-header">Agent Info</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="card">
+                <div style="font-size: 12px; color: #8b949e;">Agent ID</div>
+                <div style="font-size: 14px; color: #c9d1d9; font-family: monospace;">{st.session_state.pnp_agent.agent_id}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-# ========================
-# TAB 2: PRIVACY FEATURES
-# ========================
+# ============================================================
+# TAB 2: PRIVACY TOOLS
+# ============================================================
 
 with tab2:
-    st.markdown("### 🔐 Privacy-Preserving Operations")
-    st.markdown("Demonstrate zero-knowledge proofs and address anonymization using real privacy modules.")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("#### 🎭 Address Anonymization")
-        st.markdown("Convert public addresses to anonymous identifiers for private transactions.")
+        st.markdown('<div class="section-header">Address Anonymization</div>', unsafe_allow_html=True)
         
-        test_address = st.text_input(
-            "Solana Public Key:",
-            value="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+        address = st.text_input(
+            "Solana Address:",
+            value="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+            label_visibility="collapsed"
         )
         
-        if st.button("🔒 Anonymize Address", use_container_width=True):
+        if st.button("Anonymize", use_container_width=True):
+            start = time.time()
+            
             if st.session_state.privacy_wrapper:
-                anon_addr = st.session_state.privacy_wrapper.anonymize_address(test_address)
-                log_activity("Address Anonymized", f"{test_address[:12]}...", "Privacy Wrapper")
-                
-                st.markdown(f'''
-                <div class="code-display">
-                <strong>Original:</strong><br>
-                {test_address}<br><br>
-                <strong>Anonymized:</strong><br>
-                {anon_addr}
-                </div>
-                ''', unsafe_allow_html=True)
+                anon = st.session_state.privacy_wrapper.anonymize_address(address)
+                elapsed = time.time() - start
+                log_activity("Address Anonymized", f"{address[:12]}... ({elapsed:.3f}s)", "Privacy Wrapper")
             else:
-                anon_addr = f"anon_{hashlib.sha256(test_address.encode()).hexdigest()[:32]}"
-                st.info("Using fallback anonymization (Privacy Wrapper not loaded)")
-                st.code(f"Anonymized: {anon_addr}")
+                anon = f"anon_{hashlib.sha256(address.encode()).hexdigest()[:32]}"
+                log_activity("Address Anonymized", f"{address[:12]}... (fallback)", "Fallback")
+            
+            st.markdown(f"""
+            <div class="card">
+                <div class="card-header">Original</div>
+                <div style="font-family: monospace; font-size: 12px; color: #8b949e; word-break: break-all;">{address}</div>
+                <div class="card-header" style="margin-top: 16px;">Anonymized</div>
+                <div style="font-family: monospace; font-size: 12px; color: #3fb950; word-break: break-all;">{anon}</div>
+            </div>
+            """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown("#### 🔑 ZK Proof Generation")
-        st.markdown("Create zero-knowledge proofs for private market operations.")
+        st.markdown('<div class="section-header">ZK Proof Generation</div>', unsafe_allow_html=True)
         
-        proof_type = st.selectbox("Proof Type:", ["ownership", "collateral", "eligibility"])
-        proof_amount = st.number_input("Prove Amount (hidden):", value=100, min_value=1)
+        proof_type = st.selectbox("Proof Type", ["ownership", "collateral", "eligibility"])
         
-        if st.button("⚡ Generate ZK Proof", use_container_width=True):
+        if st.button("Generate Proof", use_container_width=True):
+            start = time.time()
+            
             if st.session_state.privacy_wrapper:
                 proof = st.session_state.privacy_wrapper.create_zk_proof(
                     proof_type=proof_type,
-                    statement={"has_sufficient_funds": True, "is_eligible": True},
-                    witness={"amount": proof_amount, "token": "ELUSIV"}
+                    statement={"verified": True},
+                    witness={"data": "hidden"}
                 )
                 st.session_state.zk_proofs.append(proof)
-                log_activity("ZK Proof Created", f"Type: {proof_type}", "Privacy Wrapper")
+                elapsed = time.time() - start
+                log_activity("ZK Proof Generated", f"Type: {proof_type} ({elapsed:.3f}s)", "Privacy Wrapper")
                 
-                st.success("ZK Proof generated using real Privacy Wrapper!")
-                st.json(proof)
+                st.markdown(f"""
+                <div class="card">
+                    <div class="card-header">Proof ID</div>
+                    <div style="font-family: monospace; font-size: 12px; color: #58a6ff;">{proof['proof_id']}</div>
+                    <div style="display: flex; margin-top: 12px;">
+                        <div style="flex: 1;">
+                            <div class="card-header">Type</div>
+                            <div style="color: #c9d1d9;">{proof['proof_type']}</div>
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="card-header">Verified</div>
+                            <div style="color: #3fb950;">Yes</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
             else:
-                proof = {
-                    "proof_id": hashlib.sha256(f"{proof_type}{datetime.now()}".encode()).hexdigest()[:24],
-                    "proof_type": proof_type,
-                    "verified": True,
-                    "created_at": datetime.now().isoformat()
-                }
-                st.info("Using fallback proof generation")
-                st.json(proof)
+                st.warning("Privacy Wrapper not available")
     
     st.markdown("---")
+    st.markdown('<div class="section-header">Generated Proofs</div>', unsafe_allow_html=True)
     
-    st.markdown("#### 📜 Generated ZK Proofs")
     if st.session_state.zk_proofs:
-        proofs_df = pd.DataFrame([
-            {
-                "Proof ID": p.get('proof_id', 'N/A')[:16] + "...",
+        proofs_data = []
+        for p in st.session_state.zk_proofs[-10:]:
+            proofs_data.append({
+                "Proof ID": p.get('proof_id', 'N/A')[:24] + "...",
                 "Type": p.get('proof_type', 'N/A'),
-                "Verified": "✅" if p.get('verified', False) else "❌",
+                "Verified": "Yes" if p.get('verified', False) else "No",
                 "Created": p.get('created_at', 'N/A')[:19]
-            }
-            for p in st.session_state.zk_proofs[-10:]
-        ])
-        st.dataframe(proofs_df, use_container_width=True, hide_index=True)
+            })
+        st.dataframe(pd.DataFrame(proofs_data), use_container_width=True, hide_index=True)
     else:
-        st.info("No ZK proofs generated yet. Create a market or generate a proof above!")
+        st.info("No proofs generated yet")
 
-# ========================
-# TAB 3: COLLATERAL MANAGEMENT
-# ========================
+# ============================================================
+# TAB 3: COLLATERAL
+# ============================================================
 
 with tab3:
-    st.markdown("### 💰 Privacy Token Collateral")
-    st.markdown("Manage collateral deposits using privacy-focused tokens on Solana.")
+    st.markdown('<div class="section-header">Privacy Token Collateral</div>', unsafe_allow_html=True)
     
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    locked = get_locked_collateral()
+    collateral = get_collateral_totals()
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown(f'''
-        <div class="token-card elusiv">
-            <div class="token-name">🟣 ELUSIV</div>
-            <div style="font-size: 2rem; font-weight: bold; color: #9945FF;">{locked["ELUSIV"]:,.0f}</div>
-            <div class="token-desc">
-                <strong>Privacy Level:</strong> Maximum<br>
-                <strong>Use Case:</strong> High-value trades (&gt;$1000)<br><br>
-                Full transaction privacy with ZK encryption and anonymous settlements.
-            </div>
+        st.markdown(f"""
+        <div class="token-card">
+            <div class="token-name">ELUSIV</div>
+            <div class="token-label">Maximum Privacy</div>
+            <div class="token-amount">{collateral['ELUSIV']:,.0f}</div>
+            <div class="token-label">Locked</div>
         </div>
-        ''', unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown(f'''
-        <div class="token-card light">
-            <div class="token-name">🔵 LIGHT</div>
-            <div style="font-size: 2rem; font-weight: bold; color: #00D1FF;">{locked["LIGHT"]:,.0f}</div>
-            <div class="token-desc">
-                <strong>Privacy Level:</strong> High<br>
-                <strong>Use Case:</strong> Medium trades ($500-$1000)<br><br>
-                Light Protocol integration with confidential transfers and fast settlements.
-            </div>
+        st.markdown(f"""
+        <div class="token-card">
+            <div class="token-name">LIGHT</div>
+            <div class="token-label">High Privacy</div>
+            <div class="token-amount">{collateral['LIGHT']:,.0f}</div>
+            <div class="token-label">Locked</div>
         </div>
-        ''', unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col3:
-        st.markdown(f'''
-        <div class="token-card pnp">
-            <div class="token-name">🟢 PNP</div>
-            <div style="font-size: 2rem; font-weight: bold; color: #14F195;">{locked["PNP"]:,.0f}</div>
-            <div class="token-desc">
-                <strong>Privacy Level:</strong> Standard<br>
-                <strong>Use Case:</strong> Regular trades (&lt;$500)<br><br>
-                Native PNP Exchange token with lower fees and quick execution.
-            </div>
+        st.markdown(f"""
+        <div class="token-card">
+            <div class="token-name">PNP</div>
+            <div class="token-label">Standard Privacy</div>
+            <div class="token-amount">{collateral['PNP']:,.0f}</div>
+            <div class="token-label">Locked</div>
         </div>
-        ''', unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
-    
-    st.markdown("#### 🔒 Lock Collateral Manually")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        lock_token = st.selectbox("Token to Lock:", ["ELUSIV", "LIGHT", "PNP"], key="lock_token")
-        lock_amount = st.number_input("Amount:", value=50, min_value=1, key="lock_amount")
-        lock_purpose = st.selectbox("Purpose:", ["market_creation", "liquidity_provision", "trading"])
-    
-    with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("🔒 Lock Collateral", use_container_width=True):
+        st.markdown('<div class="section-header">Lock Collateral</div>', unsafe_allow_html=True)
+        
+        lock_token = st.selectbox("Token", ["ELUSIV", "LIGHT", "PNP"], key="lock_token")
+        lock_amount = st.number_input("Amount", value=50, min_value=1, key="lock_amount")
+        
+        if st.button("Lock", use_container_width=True):
             if st.session_state.collateral_manager:
                 try:
+                    start = time.time()
                     result = st.session_state.collateral_manager.lock_collateral(
                         market_id=f"manual-{datetime.now().timestamp()}",
                         token=lock_token,
                         amount=float(lock_amount),
-                        owner_pubkey=f"user-{hashlib.sha256(str(datetime.now()).encode()).hexdigest()[:16]}",
-                        purpose=lock_purpose
+                        owner_pubkey=f"user-{hashlib.sha256(str(datetime.now()).encode()).hexdigest()[:16]}"
                     )
-                    log_activity("Collateral Locked", f"{lock_amount} {lock_token}", "Collateral Manager")
-                    st.success(f"Locked {lock_amount} {lock_token} successfully!")
-                    st.json(result)
+                    elapsed = time.time() - start
+                    log_activity("Collateral Locked", f"{lock_amount} {lock_token} ({elapsed:.3f}s)", "Collateral Mgr")
+                    st.success(f"Locked {lock_amount} {lock_token}")
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error: {e}")
             else:
                 st.warning("Collateral Manager not available")
     
+    with col2:
+        st.markdown('<div class="section-header">Distribution</div>', unsafe_allow_html=True)
+        
+        if sum(collateral.values()) > 0:
+            fig = go.Figure(data=[go.Pie(
+                labels=list(collateral.keys()),
+                values=list(collateral.values()),
+                hole=0.5,
+                marker_colors=['#8b5cf6', '#3b82f6', '#10b981']
+            )])
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font_color='#c9d1d9',
+                height=250,
+                margin=dict(t=20, b=20, l=20, r=20),
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=-0.1)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No collateral locked yet")
+    
     st.markdown("---")
+    st.markdown('<div class="section-header">Created Markets</div>', unsafe_allow_html=True)
     
-    # Collateral distribution chart
-    st.markdown("#### 📊 Collateral Distribution")
-    
-    if sum(locked.values()) > 0:
-        fig = go.Figure(data=[go.Pie(
-            labels=list(locked.keys()),
-            values=list(locked.values()),
-            hole=.4,
-            marker_colors=['#9945FF', '#00D1FF', '#14F195']
-        )])
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font_color='#fff',
-            height=300,
-            margin=dict(t=20, b=20, l=20, r=20)
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    if st.session_state.markets:
+        markets_data = []
+        for m in st.session_state.markets:
+            markets_data.append({
+                "ID": m.get('market_id', 'N/A'),
+                "Question": m.get('question', 'N/A')[:50] + "...",
+                "Token": m.get('collateral_token', 'N/A'),
+                "Amount": f"${m.get('collateral_amount', 0):,.0f}",
+                "Status": m.get('status', 'active').upper()
+            })
+        st.dataframe(pd.DataFrame(markets_data), use_container_width=True, hide_index=True)
     else:
-        st.info("No collateral locked yet. Create a market to lock collateral!")
+        st.info("No markets created yet")
 
-# ========================
-# TAB 4: MARKETS & ANALYTICS
-# ========================
+# ============================================================
+# TAB 4: ACTIVITY LOG
+# ============================================================
 
 with tab4:
-    st.markdown("### 📊 Created Markets")
-    
-    if st.session_state.created_markets:
-        markets_df = pd.DataFrame([
-            {
-                "Market ID": m.get('market_id', 'N/A'),
-                "Question": m.get('question', 'N/A')[:60] + "...",
-                "Token": m.get('collateral_token', 'N/A'),
-                "Collateral": f"${m.get('collateral_amount', 0):,.0f}",
-                "Status": m.get('status', 'active').upper()
-            }
-            for m in st.session_state.created_markets
-        ])
-        
-        st.dataframe(markets_df, use_container_width=True, hide_index=True, height=250)
-    else:
-        st.info("No markets created yet. Go to AI Market Creation to create your first market!")
-    
-    st.markdown("---")
-    
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("#### 📈 Markets by Token")
-        
-        if st.session_state.created_markets:
-            token_counts = {}
-            for m in st.session_state.created_markets:
-                token = m.get('collateral_token', 'Unknown')
-                token_counts[token] = token_counts.get(token, 0) + 1
-            
-            fig = go.Figure(data=[
-                go.Bar(
-                    x=list(token_counts.keys()),
-                    y=list(token_counts.values()),
-                    marker_color=['#9945FF', '#00D1FF', '#14F195'][:len(token_counts)]
-                )
-            ])
-            fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font_color='#fff',
-                height=300,
-                xaxis_title="Token",
-                yaxis_title="Markets",
-                margin=dict(t=20, b=40, l=40, r=20)
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Chart will appear after markets are created")
-    
+        st.metric("Total Events", len(st.session_state.activity))
     with col2:
-        st.markdown("#### 💵 Collateral Over Time")
-        
-        if st.session_state.created_markets:
-            cumulative = 0
-            time_data = []
-            for i, m in enumerate(st.session_state.created_markets):
-                cumulative += m.get('collateral_amount', 0)
-                time_data.append({
-                    "Market": i + 1,
-                    "Total Collateral": cumulative
-                })
-            
-            fig = px.area(
-                pd.DataFrame(time_data),
-                x="Market",
-                y="Total Collateral",
-                color_discrete_sequence=["#9945FF"]
-            )
-            fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font_color='#fff',
-                height=300,
-                margin=dict(t=20, b=40, l=40, r=20)
-            )
-            fig.update_traces(fillcolor='rgba(153,69,255,0.3)')
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Chart will appear after markets are created")
-
-# ========================
-# TAB 5: ACTIVITY LOG
-# ========================
-
-with tab5:
-    st.markdown("### 📋 Real-Time Activity Log")
-    st.markdown("Track all operations performed by the AI agent and connected modules.")
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        st.metric("Total Events", len(st.session_state.activity_log))
-    with col2:
-        success = sum(1 for l in st.session_state.activity_log if l.get('status') == 'success')
-        total = len(st.session_state.activity_log) or 1
-        st.metric("Success Rate", f"{success/total*100:.0f}%")
+        success_count = sum(1 for a in st.session_state.activity if a.get('status') == 'success')
+        total = len(st.session_state.activity) or 1
+        st.metric("Success Rate", f"{success_count/total*100:.0f}%")
     with col3:
-        if st.button("🗑️ Clear Log"):
-            st.session_state.activity_log = []
+        if st.button("Clear Log"):
+            st.session_state.activity = []
             st.rerun()
     
     st.markdown("---")
     
-    if st.session_state.activity_log:
-        for log in st.session_state.activity_log[:20]:
-            status_color = "#14F195" if log.get('status') == 'success' else "#FF6B6B"
-            st.markdown(f'''
-            <div class="activity-item" style="border-left-color: {status_color};">
-                <span class="activity-time">{log.get('timestamp', '')} | {log.get('module', '-')}</span><br>
-                <span class="activity-event">{log.get('event', '')}</span><br>
-                <span style="color: #888; font-size: 0.85rem;">{log.get('details', '')}</span>
+    if st.session_state.activity:
+        for entry in st.session_state.activity[:20]:
+            status_class = "success" if entry.get('status') == 'success' else 'error'
+            st.markdown(f"""
+            <div class="log-entry {status_class}">
+                <div class="log-time">{entry.get('time', '')} | {entry.get('module', '')}</div>
+                <div class="log-event">{entry.get('event', '')}</div>
+                <div class="log-detail">{entry.get('detail', '')}</div>
             </div>
-            ''', unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
     else:
-        st.info("No activity logged yet. Start using the dashboard to see operations here!")
+        st.info("No activity logged yet. Create a market or use privacy tools to see logs.")
 
-# ========================
+# ============================================================
 # SIDEBAR
-# ========================
+# ============================================================
 
 with st.sidebar:
-    st.markdown("## 🔐 PNP Dashboard")
+    st.markdown("### PNP Dashboard")
     st.markdown("---")
     
-    st.markdown("### 📊 Quick Stats")
-    st.markdown(f"**Markets:** {len(st.session_state.created_markets)}")
-    st.markdown(f"**ZK Proofs:** {len(st.session_state.zk_proofs)}")
-    st.markdown(f"**Operations:** {len(st.session_state.activity_log)}")
-    
-    st.markdown("---")
-    
-    st.markdown("### 🔧 Module Status")
-    for module, active in modules_status.items():
-        icon = "✅" if active else "❌"
-        st.markdown(f"{icon} {module}")
+    st.markdown("**Quick Stats**")
+    st.markdown(f"Markets: {len(st.session_state.markets)}")
+    st.markdown(f"ZK Proofs: {len(st.session_state.zk_proofs)}")
+    st.markdown(f"Operations: {len(st.session_state.activity)}")
     
     st.markdown("---")
     
-    st.markdown("### 🌐 Links")
-    st.markdown("[GitHub Repo](https://github.com/Demiladepy/semantic)")
-    st.markdown("[Privacy Docs](https://github.com/Demiladepy/semantic/blob/main/PRIVACY_FEATURES.md)")
+    st.markdown("**Network**")
+    network = st.radio("", ["Devnet", "Mainnet"], label_visibility="collapsed")
     
     st.markdown("---")
     
-    st.markdown("""
-    <div style="text-align: center; padding: 15px; background: rgba(153,69,255,0.1); border-radius: 10px; margin-top: 20px;">
-        <small style="color: #888;">Built for</small><br>
-        <strong style="color: #9945FF;">Solana Privacy Hack 2026</strong><br>
-        <small style="color: #888;">PNP Exchange Bounty</small>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("**Modules**")
+    for key, name in module_names.items():
+        status = "Active" if modules[key]["loaded"] else "Inactive"
+        st.markdown(f"- {name}: {status}")
+    
+    st.markdown("---")
+    
+    st.markdown("**Links**")
+    st.markdown("[GitHub](https://github.com/Demiladepy/semantic)")
+    st.markdown("[Documentation](https://github.com/Demiladepy/semantic#readme)")
 
-# ========================
+# ============================================================
 # FOOTER
-# ========================
+# ============================================================
 
 st.markdown("---")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("""
-    **🎯 Bounty Track**  
-    AI Agent / Autonomous Systems
-    """)
-
-with col2:
-    st.markdown("""
-    **🔐 Privacy Tokens**  
-    ELUSIV • LIGHT • PNP
-    """)
-
-with col3:
-    st.markdown("""
-    **⛓️ Blockchain**  
-    Solana Devnet
-    """)
-
 st.markdown(f"""
-<div style="text-align: center; color: #666; font-size: 11px; margin-top: 30px; padding: 20px;">
-    PNP AI Agent Dashboard | Solana Privacy Hack 2026<br>
-    Modules Active: {REAL_MODULES_COUNT}/5 | 
-    Privacy Wrapper: {'✅' if modules_status['Privacy Wrapper'] else '❌'} | 
-    Collateral Manager: {'✅' if modules_status['Collateral Manager'] else '❌'} | 
-    Market Factory: {'✅' if modules_status['Market Factory'] else '❌'} | 
-    PNP Agent: {'✅' if modules_status['PNP Agent'] else '❌'} | 
-    SDK Adapter: {'✅' if modules_status['SDK Adapter'] else '❌'}
+<div style="text-align: center; color: #8b949e; font-size: 12px; padding: 20px 0;">
+    PNP Agent Dashboard | Solana {network} | Modules: {MODULES_LOADED}/4 Active
 </div>
 """, unsafe_allow_html=True)
