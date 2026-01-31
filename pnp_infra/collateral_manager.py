@@ -281,6 +281,30 @@ class CollateralManager:
         return [lock for lock in self.locked_collateral.values() 
                 if lock['market_id'] == market_id]
     
+    def get_collateral_by_market(self, market_id: str) -> Optional[Dict[str, Any]]:
+        """Get primary collateral lock for a market."""
+        locks = self.get_market_locks(market_id)
+        return locks[0] if locks else None
+    
+    def release_by_market(self, market_id: str, resolution_outcome: str = "resolved") -> Dict[str, Any]:
+        """Release all collateral for a market after resolution."""
+        locks = self.get_market_locks(market_id)
+        if not locks:
+            raise ValueError(f"No collateral found for market {market_id}")
+        
+        released = []
+        for lock in locks:
+            if lock['status'] == CollateralStatus.LOCKED.value:
+                result = self.release_collateral(lock['lock_id'])
+                released.append(result)
+        
+        return {
+            'market_id': market_id,
+            'resolution': resolution_outcome,
+            'released_count': len(released),
+            'status': 'released'
+        }
+    
     def get_total_locked(self, token: Optional[str] = None) -> float:
         """Get total amount of locked collateral, optionally filtered by token."""
         total = 0.0

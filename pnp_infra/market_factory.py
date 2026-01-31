@@ -158,6 +158,36 @@ class MarketFactory:
             markets = [m for m in markets if m['status'] == status]
         return markets
     
+    def get_market(self, market_id: str) -> Optional[Dict[str, Any]]:
+        """Alias for get_market_account for convenience."""
+        return self.get_market_account(market_id)
+    
+    def list_markets(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Alias for list_deployed_markets for convenience."""
+        return self.list_deployed_markets(status)
+    
+    def add_liquidity(self, market_id: str, outcome: str, amount: float) -> Dict[str, Any]:
+        """Add liquidity to a market outcome."""
+        if market_id not in self.deployed_markets:
+            raise ValueError(f"Market {market_id} not found")
+        
+        account = self.deployed_markets[market_id]
+        
+        if outcome not in account['outcome_liquidity']:
+            raise ValueError(f"Invalid outcome: {outcome}")
+        
+        account['outcome_liquidity'][outcome] += amount
+        account['total_liquidity'] += amount
+        account['last_updated'] = datetime.utcnow().isoformat()
+        
+        return {
+            'market_id': market_id,
+            'outcome': outcome,
+            'added': amount,
+            'new_liquidity': account['outcome_liquidity'][outcome],
+            'total_liquidity': account['total_liquidity']
+        }
+    
     def get_account_state(self, market_id: str) -> Optional[Dict[str, Any]]:
         """
         Get the current state of a market account.
