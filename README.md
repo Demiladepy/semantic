@@ -1,53 +1,40 @@
-#  Semantic Arbitrage Engine
+# Semantic Arbitrage Engine
 
 > **AI-Powered Cross-Platform Prediction Market Arbitrage System**
 
-A sophisticated Python-based arbitrage engine that identifies and exploits logical arbitrage opportunities across multiple prediction market platforms (Polymarket, Kalshi, PNP Exchange) using advanced Natural Language Inference (NLI) and semantic analysis.
+A sophisticated Python-based arbitrage engine that identifies and exploits logical arbitrage opportunities across multiple prediction market platforms using advanced Natural Language Inference (NLI) and semantic analysis.
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: Production Ready](https://img.shields.io/badge/status-production%20ready-green.svg)]()
-[![Solana](https://img.shields.io/badge/Solana-Privacy%20Hack-9945FF.svg)](https://solana.com/privacyhack)
+[![Solana](https://img.shields.io/badge/Solana-Devnet-9945FF.svg)](https://solana.com)
+[![Status: Active](https://img.shields.io/badge/status-active-brightgreen.svg)]()
 
 ---
 
-## Solana Privacy Hack Submission
+## Table of Contents
 
-**Bounty Track**: PNP Exchange - AI Agent/Autonomous Systems
-
-This project is a submission for the [Solana Privacy Hack](https://solana.com/privacyhack) hackathon, targeting the **PNP Exchange bounty** for building AI agents that create prediction markets using privacy-focused tokens as collateral.
-
-**Key Features for Bounty**:
-- **AI Agent Market Creation** (`pnp_agent.py`) - Autonomous market generation from prompts
-- **Privacy Token Collateral** - ELUSIV, LIGHT, and PNP token support
-- **Privacy-Preserving Operations** - Address anonymization and ZK proof framework
-
-See [PRIVACY_FEATURES.md](PRIVACY_FEATURES.md) for detailed privacy implementation documentation.
-
----
-
-##  Table of Contents
-
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [Architecture](#-architecture)
-- [Supported Platforms](#-supported-platforms)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Quick Start](#-quick-start)
-- [Core Components](#-core-components)
-- [PNP Exchange Integration](#-pnp-exchange-integration)
-- [Usage Examples](#-usage-examples)
-- [Advanced Features](#-advanced-features)
-- [Testing](#-testing)
-- [Documentation](#-documentation)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Supported Platforms](#supported-platforms)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Quick Start](#quick-start)
+- [Core Components](#core-components)
+- [AI Agent & Privacy Features](#ai-agent--privacy-features)
+- [PNP Exchange Integration](#pnp-exchange-integration)
+- [Usage Examples](#usage-examples)
+- [Advanced Features](#advanced-features)
+- [Live Dashboard](#live-dashboard)
+- [Testing](#testing)
+- [Documentation](#documentation)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-##  Overview
+## Overview
 
 The Semantic Arbitrage Engine is a cutting-edge trading system that:
 
@@ -56,58 +43,76 @@ The Semantic Arbitrage Engine is a cutting-edge trading system that:
 - **Executes** profitable arbitrage trades automatically
 - **Manages** risk with sophisticated position sizing and exposure limits
 - **Monitors** markets in real-time with WebSocket integration
+- **Protects** privacy with zero-knowledge proof support
 - **Alerts** via Telegram for critical events and opportunities
 
 ### What Makes It Unique?
 
-Unlike traditional arbitrage systems that rely on exact market matching, this engine uses **semantic understanding** to identify equivalent markets even when questions are phrased differently. For example:
+Unlike traditional arbitrage systems that rely on exact market matching, this engine uses **semantic understanding** to identify equivalent markets even when questions are phrased differently:
 
-- "Will Bitcoin reach $100K by 2025?" ≈ "BTC to hit 100,000 USD before 2026?"
-- "Will Trump win the 2024 election?" ≈ "Donald Trump elected president in 2024?"
+```
+"Will Bitcoin reach $100K by 2025?" ≈ "BTC to hit 100,000 USD before 2026?"
+"Will Trump win the 2024 election?" ≈ "Donald Trump elected president in 2024?"
+```
+
+### AI-Powered Market Creation
+
+The system includes an autonomous AI agent that can:
+- Generate prediction market questions from natural language prompts
+- Select optimal privacy tokens for collateral
+- Deploy markets on Solana with privacy-preserving features
+- Create zero-knowledge proofs for anonymous participation
 
 ---
 
-##  Key Features
+## Key Features
 
-###  **Intelligent Market Matching**
+### Intelligent Market Matching
 - Natural Language Inference (NLI) for semantic question matching
 - Entailment and contradiction detection
 - Temporal proximity analysis
 - Confidence scoring and filtering
 
-###  **Multi-Platform Arbitrage**
+### Multi-Platform Arbitrage
 - **Polymarket** (Polygon blockchain)
 - **Kalshi** (CFTC-regulated exchange)
-- **PNP Exchange** (Solana-based prediction markets)
+- **PNP Exchange** (Solana-based with privacy features)
 - Cross-platform price comparison and execution
 
-###  **Automated Trading**
+### AI Agent System
+- Autonomous market creation from prompts
+- GPT-powered question generation
+- Multi-token collateral management
+- Real-time market deployment
+
+### Privacy-Preserving Operations
+- Zero-knowledge proof framework
+- Address anonymization
+- Encrypted market data
+- Private order execution
+- Support for ELUSIV, LIGHT, and PNP privacy tokens
+
+### Automated Trading
 - Atomic execution with rollback on failure
 - Slippage protection
 - Gas optimization
 - Position tracking and management
 
-###  **Risk Management**
+### Risk Management
 - Portfolio-level exposure limits
 - Per-market position sizing
 - Profit margin thresholds
 - Real-time P&L tracking
 
-###  **Real-Time Monitoring**
+### Real-Time Monitoring
 - WebSocket integration for live updates
+- Interactive Streamlit dashboard
 - Telegram alerts for opportunities
-- Market event notifications
-- Error and execution alerts
-
-###  **Privacy & Security**
-- Zero-knowledge proof support (PNP Exchange)
-- Encrypted market data
-- Anonymized trading (optional)
-- Secure key management
+- Comprehensive activity logging
 
 ---
 
-##  Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -134,53 +139,63 @@ Unlike traditional arbitrage systems that rely on exact market matching, this en
                 │            │            │
                 ▼            ▼            ▼
         ┌───────────┐  ┌──────────┐  ┌──────────┐
-        │    NLI    │  │   Arb    │  │   Risk   │
-        │  Engine   │  │  Finder  │  │ Manager  │
+        │    NLI    │  │ PNP AI   │  │   Risk   │
+        │  Engine   │  │  Agent   │  │ Manager  │
         └─────┬─────┘  └────┬─────┘  └────┬─────┘
               │             │             │
               └─────────────┼─────────────┘
                             │
-                            ▼
-                   ┌────────────────┐
-                   │  Execution Bot │
-                   └────────┬───────┘
-                            │
-                ┌───────────┼───────────┐
-                │           │           │
-                ▼           ▼           ▼
-        ┌──────────┐  ┌──────────┐  ┌──────────┐
-        │ Telegram │  │ Dashboard│  │  Logger  │
-        │ Alerter  │  │          │  │          │
-        └──────────┘  └──────────┘  └──────────┘
+                   ┌────────┴────────┐
+                   │                 │
+                   ▼                 ▼
+           ┌──────────────┐  ┌──────────────┐
+           │   Privacy    │  │  Collateral  │
+           │   Wrapper    │  │   Manager    │
+           └──────┬───────┘  └──────┬───────┘
+                  │                 │
+                  └────────┬────────┘
+                           │
+                           ▼
+                  ┌────────────────┐
+                  │  Execution Bot │
+                  └────────┬───────┘
+                           │
+               ┌───────────┼───────────┐
+               │           │           │
+               ▼           ▼           ▼
+       ┌──────────┐  ┌──────────┐  ┌──────────┐
+       │ Telegram │  │ Dashboard│  │  Logger  │
+       │ Alerter  │  │(Streamlit│  │          │
+       └──────────┘  └──────────┘  └──────────┘
 ```
 
 ---
 
-##  Supported Platforms
+## Supported Platforms
 
-### 1. **Polymarket** 
+### 1. Polymarket
 - **Blockchain**: Polygon (Layer 2)
 - **Type**: Decentralized prediction market
 - **Collateral**: USDC
 - **Features**: High liquidity, wide market variety
 - **Integration**: CLOB API + On-chain settlement
 
-### 2. **Kalshi**
+### 2. Kalshi
 - **Type**: CFTC-regulated exchange
 - **Collateral**: USD
 - **Features**: Legal compliance, institutional-grade
 - **Integration**: REST API + WebSocket
 
-### 3. **PNP Exchange**
+### 3. PNP Exchange
 - **Blockchain**: Solana
 - **Type**: Privacy-focused prediction markets
 - **Collateral**: USDC, ELUSIV, LIGHT, PNP
 - **Features**: Zero-knowledge proofs, anonymous trading
-- **Integration**: Official PNP SDK + Custom bridge
+- **Integration**: Official PNP SDK + Python bridge
 
 ---
 
-##  Installation
+## Installation
 
 ### Prerequisites
 
@@ -213,11 +228,11 @@ npm install pnp-sdk @solana/web3.js
 cp .env.example .env
 ```
 
-Edit `.env` and add your API keys (see [Configuration](#-configuration)).
+Edit `.env` and add your API keys (see [Configuration](#configuration)).
 
 ---
 
-##  Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -228,7 +243,7 @@ Create a `.env` file with the following configuration:
 # REQUIRED API KEYS
 # ============================================
 
-# OpenAI API (Required for NLI Engine)
+# OpenAI API (Required for NLI Engine & AI Agent)
 OPENAI_API_KEY=your_openai_api_key_here
 
 # Telegram Bot (Required for alerts)
@@ -243,17 +258,9 @@ KALSHI_API_SECRET=your_kalshi_private_key_pem_here
 POLYGON_RPC_URL=https://polygon-rpc.com/
 POLYGON_PRIVATE_KEY=your_polygon_private_key_here
 POLYMARKET_PRIVATE_KEY=your_polygon_private_key_here
-POLYMARKET_API_KEY=optional_if_needed
-
-# Mezo Network Integration
-MEZO_PRIVACY_KEY=your_mezo_privacy_key_here
-
-# UMA Oracle (Required for resolution tracking)
-UMA_FINDER_ADDRESS=0x...
-UMA_OOV3_ADDRESS=0x...
 
 # Solana / PNP Exchange Integration
-SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+SOLANA_RPC_URL=https://api.devnet.solana.com
 SOLANA_PRIVATE_KEY=your_solana_private_key_base58_here
 PNP_PRIVATE_KEY=your_solana_private_key_base58_here
 
@@ -262,10 +269,8 @@ PNP_PRIVATE_KEY=your_solana_private_key_base58_here
 # ============================================
 
 MAX_GAS_PRICE_GWEI=50
-MIN_PROFIT_MARGIN=0.015  # 1.5% minimum after fees
-MIN_PROFIT_MARGIN_PCT=2.5  # 2.5% minimum after fees (enhanced)
-LEG_FILL_TIMEOUT_SECONDS=5
-SLIPPAGE_TOLERANCE=0.02  # 2%
+MIN_PROFIT_MARGIN=0.015
+SLIPPAGE_TOLERANCE=0.02
 
 # ============================================
 # RISK MANAGEMENT
@@ -275,21 +280,6 @@ TOTAL_CAPITAL_USD=10000.0
 MAX_POSITION_SIZE_PCT=10.0
 MAX_SINGLE_MARKET_EXPOSURE_PCT=20.0
 MAX_TOTAL_EXPOSURE_PCT=80.0
-
-# ============================================
-# STRATEGY PARAMETERS
-# ============================================
-
-MIN_DEVIATION_PCT=0.5  # Minimum deviation for market rebalancing
-TEMPORAL_THRESHOLD_DAYS=7  # Temporal proximity threshold
-MIN_NLI_CONFIDENCE=0.85  # Minimum NLI confidence
-
-# ============================================
-# LOGGING
-# ============================================
-
-LOG_LEVEL=INFO
-TRADING_MODE=simulation  # simulation, paper, live
 ```
 
 ### Getting API Keys
@@ -304,7 +294,7 @@ See `API_KEYS_SETUP.md` for detailed instructions.
 
 ---
 
-##  Quick Start
+## Quick Start
 
 ### 1. Test Market Data Fetching
 
@@ -312,15 +302,11 @@ See `API_KEYS_SETUP.md` for detailed instructions.
 python market_client.py
 ```
 
-This fetches active markets from all supported platforms.
-
 ### 2. Run NLI Engine Demo
 
 ```bash
 python nli_engine.py
 ```
-
-Demonstrates semantic clustering and entailment checks.
 
 ### 3. Find Arbitrage Opportunities
 
@@ -328,29 +314,23 @@ Demonstrates semantic clustering and entailment checks.
 python arb_finder.py
 ```
 
-Scans all platforms and identifies profitable arbitrage opportunities.
-
 ### 4. Execute Automated Trading
 
 ```bash
 python execution_bot.py
 ```
 
-Runs the full arbitrage bot with automatic execution.
-
-### 5. Monitor with Dashboard
+### 5. Launch Dashboard
 
 ```bash
-python dashboard.py
+streamlit run dashboard.py
 ```
-
-Launches a web dashboard for monitoring positions and P&L.
 
 ---
 
-##  Core Components
+## Core Components
 
-### 1. **Market Client** (`market_client.py`)
+### Market Client (`market_client.py`)
 
 Unified interface for fetching markets from all platforms.
 
@@ -362,11 +342,9 @@ markets = client.fetch_all_markets()
 
 for market in markets:
     print(f"{market['platform']}: {market['question']}")
-    print(f"  YES: ${market['yes_price']:.2f}")
-    print(f"  NO: ${market['no_price']:.2f}")
 ```
 
-### 2. **NLI Engine** (`nli_engine.py`)
+### NLI Engine (`nli_engine.py`)
 
 Semantic analysis for question matching.
 
@@ -374,18 +352,14 @@ Semantic analysis for question matching.
 from nli_engine import NLIEngine
 
 nli = NLIEngine()
-
-# Check if two questions are equivalent
 result = nli.check_entailment(
     "Will Bitcoin reach $100K by 2025?",
     "BTC to hit 100,000 USD before 2026?"
 )
-
-print(f"Entailment: {result['label']}")
-print(f"Confidence: {result['confidence']:.2%}")
+print(f"Entailment: {result['label']} ({result['confidence']:.2%})")
 ```
 
-### 3. **Arbitrage Finder** (`arb_finder.py`)
+### Arbitrage Finder (`arb_finder.py`)
 
 Identifies profitable opportunities.
 
@@ -397,22 +371,9 @@ opportunities = finder.find_opportunities()
 
 for opp in opportunities:
     print(f"Profit: {opp['profit_pct']:.2f}%")
-    print(f"Buy {opp['side']} on {opp['buy_platform']}")
-    print(f"Sell {opp['side']} on {opp['sell_platform']}")
 ```
 
-### 4. **Execution Bot** (`execution_bot.py`)
-
-Automated trade execution.
-
-```python
-from execution_bot import ExecutionBot
-
-bot = ExecutionBot()
-bot.run()  # Runs continuously, executing profitable trades
-```
-
-### 5. **Risk Manager** (`risk_manager.py`)
+### Risk Manager (`risk_manager.py`)
 
 Portfolio risk management.
 
@@ -420,51 +381,108 @@ Portfolio risk management.
 from risk_manager import RiskManager
 
 risk_mgr = RiskManager(total_capital=10000)
-
-# Check if trade is allowed
-allowed = risk_mgr.check_position_limits(
-    market_id="market_123",
-    amount=500
-)
-```
-
-### 6. **Telegram Alerter** (`telegram_alerter.py`)
-
-Real-time notifications.
-
-```python
-from telegram_alerter import TelegramAlerter
-
-alerter = TelegramAlerter()
-alerter.send_alert("🚨 Arbitrage opportunity found! Profit: 5.2%")
+allowed = risk_mgr.check_position_limits(market_id="market_123", amount=500)
 ```
 
 ---
 
-## 🔗 PNP Exchange Integration
+## AI Agent & Privacy Features
+
+### PNP Agent (`pnp_agent.py`)
+
+Autonomous AI agent for market creation.
+
+```python
+from pnp_agent import PNPAgent
+
+agent = PNPAgent(default_collateral_token='ELUSIV')
+
+# Create market from natural language prompt
+result = agent.create_market_from_prompt(
+    prompt="SpaceX successfully lands on Mars in 2026",
+    collateral_token="ELUSIV",
+    collateral_amount=100.0
+)
+
+print(f"Market ID: {result['market_id']}")
+print(f"Question: {result['question']}")
+```
+
+### Privacy Wrapper (`pnp_infra/privacy_wrapper.py`)
+
+Zero-knowledge proof operations.
+
+```python
+from pnp_infra.privacy_wrapper import PrivacyWrapper, PrivacyLevel
+
+wrapper = PrivacyWrapper(default_privacy_level=PrivacyLevel.ANONYMOUS)
+
+# Anonymize address
+anon_addr = wrapper.anonymize_address("7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
+
+# Create ZK proof
+proof = wrapper.create_zk_proof(
+    proof_type="ownership",
+    statement={"has_collateral": True},
+    witness={"amount": 100.0}
+)
+```
+
+### Collateral Manager (`pnp_infra/collateral_manager.py`)
+
+Privacy token collateral management.
+
+```python
+from pnp_infra.collateral_manager import CollateralManager
+
+manager = CollateralManager()
+
+# Lock collateral
+result = manager.lock_collateral(
+    market_id="PNP-001",
+    token="ELUSIV",
+    amount=100.0,
+    owner_pubkey="your_pubkey"
+)
+
+# Get locked amounts
+total = manager.get_total_locked("ELUSIV")
+```
+
+### Market Factory (`pnp_infra/market_factory.py`)
+
+Deploy market accounts on Solana.
+
+```python
+from pnp_infra.market_factory import MarketFactory
+
+factory = MarketFactory(network='devnet')
+
+account = factory.deploy_market_account(
+    market_id="PNP-001",
+    question="Will ETH reach $10K?",
+    outcomes=["Yes", "No"],
+    creator_pubkey="your_pubkey",
+    collateral_token="ELUSIV",
+    collateral_amount=100.0
+)
+```
+
+---
+
+## PNP Exchange Integration
 
 ### Overview
 
-PNP Exchange is a Solana-based prediction market platform with privacy features. This project includes complete integration with the official PNP SDK.
-
-### Installation
-
-```bash
-# Install PNP SDK
-npm install pnp-sdk @solana/web3.js
-
-# Test installation
-node pnp_infra/test_installation.js
-```
+PNP Exchange is a Solana-based prediction market platform with privacy features. This project includes complete integration via Python bridge.
 
 ### Python Integration
 
 ```python
 from pnp_market_client import PNPMarketClient
 
-# Initialize client
 client = PNPMarketClient(
-    rpc_url="https://api.mainnet-beta.solana.com",
+    rpc_url="https://api.devnet.solana.com",
     private_key="your_solana_private_key"
 )
 
@@ -473,8 +491,6 @@ markets = client.fetch_all_markets()
 
 # Get market prices
 price_data = client.get_market_price(market_address)
-print(f"YES: ${price_data['yesPrice']:.4f}")
-print(f"NO: ${price_data['noPrice']:.4f}")
 
 # Buy tokens
 result = client.buy_tokens(
@@ -482,100 +498,90 @@ result = client.buy_tokens(
     side="YES",
     amount_usdc=10.0
 )
-
-# Detect arbitrage
-opportunities = client.find_arbitrage_opportunities(
-    external_markets,
-    min_profit_margin=0.02
-)
 ```
 
 ### Features
 
-- ✅ **Market Creation**: Create custom prediction markets
-- ✅ **Trading**: Buy/sell YES/NO tokens
-- ✅ **Real-Time Prices**: Get live market data
-- ✅ **Settlement**: Redeem winning positions
-- ✅ **Arbitrage Detection**: Cross-platform comparison
-- ✅ **Privacy**: Zero-knowledge proofs (optional)
-
-### Documentation
-
-- **Setup Guide**: `PNP_SETUP_COMPLETE.md`
-- **Integration Guide**: `INTEGRATION_GUIDE.md`
-- **Examples**: `pnp_integration_example.py`
-- **Official Docs**: https://docs.pnp.exchange/pnp-sdk
+- Market Creation with privacy tokens
+- Trading (Buy/Sell YES/NO tokens)
+- Real-Time Prices via SDK
+- Settlement and redemption
+- Arbitrage Detection (cross-platform)
+- Privacy (ZK proofs, anonymization)
 
 ---
 
-##  Usage Examples
+## Live Dashboard
 
-### Example 1: Simple Arbitrage Detection
+The project includes an interactive Streamlit dashboard for monitoring and demonstration.
+
+### Features
+
+- **AI Market Creation**: Generate markets from prompts
+- **Privacy Features**: ZK proof generation, address anonymization
+- **Collateral Management**: Lock/view privacy token collateral
+- **Markets & Analytics**: View created markets with charts
+- **Activity Log**: Real-time operation tracking
+
+### Running Locally
+
+```bash
+streamlit run dashboard.py
+```
+
+### Screenshots
+
+The dashboard includes:
+- Dark theme with Solana branding
+- Real-time metrics (markets, collateral, ZK proofs)
+- Interactive token selection
+- Module status indicators
+- Collateral distribution charts
+
+---
+
+## Usage Examples
+
+### Example 1: Full Arbitrage Detection
 
 ```python
 from arb_finder import ArbFinder
 
-# Initialize finder
 finder = ArbFinder(min_profit_margin=0.02)
-
-# Find opportunities
 opportunities = finder.find_opportunities()
 
-# Display results
 for opp in opportunities:
-    print(f"\n Arbitrage Opportunity:")
-    print(f"   Question: {opp['question']}")
-    print(f"   Profit: {opp['profit_pct']:.2f}%")
-    print(f"   Buy {opp['side']} on {opp['buy_platform']} @ ${opp['buy_price']:.4f}")
-    print(f"   Sell {opp['side']} on {opp['sell_platform']} @ ${opp['sell_price']:.4f}")
+    print(f"\nArbitrage Opportunity:")
+    print(f"  Question: {opp['question']}")
+    print(f"  Profit: {opp['profit_pct']:.2f}%")
+    print(f"  Buy {opp['side']} on {opp['buy_platform']}")
+    print(f"  Sell {opp['side']} on {opp['sell_platform']}")
 ```
 
-### Example 2: Automated Trading Bot
+### Example 2: AI Market Creation with Privacy
 
 ```python
-from execution_bot import ExecutionBot
-import time
+from pnp_agent import PNPAgent
+from pnp_infra.privacy_wrapper import PrivacyWrapper
 
-bot = ExecutionBot(
-    min_profit_margin=0.025,  # 2.5% minimum
-    max_position_size=1000,   # $1000 max per trade
-    check_interval=60         # Check every 60 seconds
+agent = PNPAgent(default_collateral_token='ELUSIV')
+wrapper = PrivacyWrapper()
+
+# Create market
+result = agent.create_market_from_prompt(
+    prompt="Federal Reserve cuts rates in Q2 2026",
+    collateral_amount=500.0
 )
 
-# Run bot
-print(" Starting arbitrage bot...")
-bot.run()
+# Create ZK proof for anonymous participation
+proof = wrapper.create_zk_proof(
+    proof_type="eligibility",
+    statement={"market_id": result['market_id']},
+    witness={"balance": 500.0}
+)
 ```
 
-### Example 3: Real-Time Market Monitoring
-
-```python
-from pnp_market_client import PNPMarketClient
-from telegram_alerter import TelegramAlerter
-import time
-
-client = PNPMarketClient()
-alerter = TelegramAlerter()
-
-markets_to_watch = ["market_id_1", "market_id_2"]
-
-while True:
-    for market_id in markets_to_watch:
-        price_data = client.get_market_price(market_id)
-        
-        # Alert if price moves significantly
-        if abs(price_data['yesPrice'] - 0.5) > 0.2:
-            alerter.send_alert(
-                f"📊 Price Alert!\n"
-                f"Market: {market_id}\n"
-                f"YES: ${price_data['yesPrice']:.4f}\n"
-                f"NO: ${price_data['noPrice']:.4f}"
-            )
-    
-    time.sleep(300)  # Check every 5 minutes
-```
-
-### Example 4: Cross-Platform Price Comparison
+### Example 3: Cross-Platform Price Comparison
 
 ```python
 from market_client import MarketClient
@@ -584,229 +590,117 @@ from nli_engine import NLIEngine
 market_client = MarketClient()
 nli = NLIEngine()
 
-# Fetch markets from all platforms
 poly_markets = market_client.fetch_polymarket_markets()
-kalshi_markets = market_client.fetch_kalshi_markets()
 pnp_markets = market_client.fetch_pnp_markets()
 
-# Find semantically equivalent markets
-for poly_market in poly_markets:
-    for kalshi_market in kalshi_markets:
-        # Check if questions are equivalent
-        result = nli.check_entailment(
-            poly_market['question'],
-            kalshi_market['question']
-        )
+for poly in poly_markets:
+    for pnp in pnp_markets:
+        result = nli.check_entailment(poly['question'], pnp['question'])
         
         if result['label'] == 'entailment' and result['confidence'] > 0.85:
-            # Compare prices
-            poly_yes = poly_market['yes_price']
-            kalshi_yes = kalshi_market['yes_price']
-            spread = abs(poly_yes - kalshi_yes)
-            
-            if spread > 0.05:  # 5% spread
-                print(f"\n💰 Price Discrepancy Found!")
-                print(f"   Polymarket: ${poly_yes:.4f}")
-                print(f"   Kalshi: ${kalshi_yes:.4f}")
-                print(f"   Spread: {spread*100:.2f}%")
+            spread = abs(poly['yes_price'] - pnp['yes_price'])
+            if spread > 0.05:
+                print(f"Price discrepancy: {spread*100:.2f}%")
 ```
 
 ---
 
-##  Advanced Features
+## Advanced Features
 
-### 1. **Enhanced NLI Engine**
-
-Uses state-of-the-art transformer models for semantic understanding:
+### Enhanced NLI Engine
 
 ```python
 from enhanced_nli_engine import EnhancedNLIEngine
 
 nli = EnhancedNLIEngine(model='roberta-large-mnli')
-
-# Batch processing
-results = nli.batch_check_entailment([
-    ("Question 1", "Question 2"),
-    ("Question 3", "Question 4"),
-])
-
-# Semantic clustering
 clusters = nli.cluster_similar_questions(all_questions)
 ```
 
-### 2. **Backtesting Framework**
-
-Test strategies on historical data:
+### Backtesting Framework
 
 ```python
 from backtesting_framework import Backtester
 
-backtester = Backtester(
-    start_date="2024-01-01",
-    end_date="2024-12-31",
-    initial_capital=10000
-)
-
+backtester = Backtester(start_date="2024-01-01", end_date="2024-12-31")
 results = backtester.run_backtest(strategy)
-print(f"Total Return: {results['total_return']:.2%}")
 print(f"Sharpe Ratio: {results['sharpe_ratio']:.2f}")
-print(f"Max Drawdown: {results['max_drawdown']:.2%}")
 ```
 
-### 3. **Advanced Fee Calculator**
-
-Optimize for gas and platform fees:
+### Fee Calculator
 
 ```python
 from enhanced_fee_calculator import EnhancedFeeCalculator
 
 fee_calc = EnhancedFeeCalculator()
-
-# Calculate total costs
-costs = fee_calc.calculate_total_cost(
-    platform="polymarket",
-    trade_size=1000,
-    gas_price_gwei=30
-)
-
-print(f"Platform Fee: ${costs['platform_fee']:.2f}")
-print(f"Gas Fee: ${costs['gas_fee']:.2f}")
-print(f"Total: ${costs['total']:.2f}")
-```
-
-### 4. **CLOB Orderbook Integration**
-
-Direct orderbook access for Polymarket:
-
-```python
-from clob_orderbook_client import CLOBOrderbookClient
-
-clob = CLOBOrderbookClient()
-
-# Get orderbook depth
-orderbook = clob.get_orderbook(market_id)
-print(f"Best Bid: ${orderbook['bids'][0]['price']:.4f}")
-print(f"Best Ask: ${orderbook['asks'][0]['price']:.4f}")
-
-# Place limit order
-order = clob.place_limit_order(
-    market_id=market_id,
-    side="buy",
-    price=0.55,
-    size=100
-)
+costs = fee_calc.calculate_total_cost(platform="polymarket", trade_size=1000)
 ```
 
 ---
 
-##  Testing
-
-### Unit Tests
+## Testing
 
 ```bash
-# Test individual components
-python -m pytest tests/test_nli_engine.py
-python -m pytest tests/test_arb_finder.py
-python -m pytest tests/test_risk_manager.py
-```
+# Unit tests
+python -m pytest tests/
 
-### Integration Tests
-
-```bash
-# Test full workflow
+# Integration tests
 python test_pnp_integration.py
 python test_pnp_infra.py
-```
 
-### Manual Testing
-
-```bash
-# Test market fetching
+# Manual testing
 python market_client.py
-
-# Test NLI engine
-python nli_engine.py
-
-# Test arbitrage detection
-python arb_finder.py
-
-# Test PNP integration
 python pnp_integration_example.py
 ```
 
 ---
 
-##  Documentation
+## Documentation
 
 ### Core Documentation
-- **API Keys Setup**: `API_KEYS_SETUP.md`
-- **Implementation Summary**: `IMPLEMENTATION_SUMMARY.md`
-- **Enhancements Guide**: `ENHANCEMENTS_GUIDE.md`
-- **Production Bot Guide**: `PRODUCTION_BOT_GUIDE.md`
+- `API_KEYS_SETUP.md` - API key configuration guide
+- `IMPLEMENTATION_SUMMARY.md` - Implementation details
+- `ENHANCEMENTS_GUIDE.md` - Feature documentation
+- `PRIVACY_FEATURES.md` - Privacy implementation details
 
 ### PNP Exchange Documentation
-- **Setup Guide**: `PNP_SETUP_COMPLETE.md`
-- **Integration Guide**: `INTEGRATION_GUIDE.md`
-- **Installation**: `INSTALL_PNP_SDK.md`
-- **Real-Time Integration**: `PNP_REALTIME_INTEGRATION.md`
-
-### External Documentation
-- **PNP SDK**: https://docs.pnp.exchange/pnp-sdk
-- **UMA Oracle**: https://docs.uma.xyz/
-- **Polymarket**: https://docs.polymarket.com/
-- **Kalshi**: https://kalshi.com/docs
+- `PNP_SETUP_COMPLETE.md` - Setup guide
+- `INTEGRATION_GUIDE.md` - Integration guide
+- `PNP_REALTIME_INTEGRATION.md` - Real-time features
 
 ---
 
-##  Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-**1. "Module not found" errors**
+**Module not found errors**
 ```bash
 pip install -r requirements.txt
 npm install pnp-sdk @solana/web3.js
 ```
 
-**2. API key errors**
+**API key errors**
 - Verify keys in `.env` file
-- Check key format (base58 for Solana, hex for Polygon)
-- Ensure keys have proper permissions
+- Check key format (base58 for Solana)
 
-**3. RPC connection failures**
+**RPC connection failures**
 - Try alternative RPC endpoints
 - Check network connectivity
-- Verify RPC URL in `.env`
 
-**4. Insufficient funds**
-- Ensure wallets have native tokens for gas (SOL, MATIC)
-- Check USDC balance for trading
+**Insufficient funds**
+- Ensure wallets have native tokens for gas
 - Fund wallets on testnet first
-
-**5. Transaction failures**
-- Check gas price settings
-- Verify slippage tolerance
-- Ensure market has sufficient liquidity
 
 ### Debug Mode
 
 ```python
 import logging
 logging.basicConfig(level=logging.DEBUG)
-
-# Now all operations will show detailed logs
 ```
-
-### Getting Help
-
-1. Check documentation in `/docs`
-2. Review examples in repository
-3. Check logs in `error.log`
-4. Open an issue on GitHub
 
 ---
 
-##  Contributing
+## Contributing
 
 Contributions are welcome! Please follow these guidelines:
 
@@ -816,89 +710,33 @@ Contributions are welcome! Please follow these guidelines:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-### Development Setup
-
-```bash
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/semantic.git
-cd semantic
-
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest
-
-# Format code
-black .
-flake8 .
-```
-
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-##  Acknowledgments
+## Acknowledgments
 
-- **OpenAI** for GPT models used in NLI
+- **OpenAI** for GPT models used in NLI and AI Agent
 - **Hugging Face** for transformer models
 - **PNP Exchange** for the official SDK
 - **Polymarket** for market data access
 - **Kalshi** for regulated market access
-- **UMA Protocol** for oracle infrastructure
+- **Solana** for blockchain infrastructure
 
 ---
 
-##  Contact
+## Contact
 
 - **GitHub**: [@Demiladepy](https://github.com/Demiladepy)
 - **Project**: [Semantic Arbitrage Engine](https://github.com/Demiladepy/semantic)
 
 ---
 
-##  Roadmap
-
-### Q1 2026
-- ✅ Multi-platform integration (Polymarket, Kalshi, PNP)
-- ✅ NLI-based semantic matching
-- ✅ Automated execution bot
-- ✅ Telegram alerts
-- ⏳ Machine learning price prediction
-- ⏳ Advanced risk models
-
-### Q2 2026
-- ⏳ Additional platform integrations
-- ⏳ Mobile app for monitoring
-- ⏳ Advanced backtesting suite
-- ⏳ Community features
-
-### Q3 2026
-- ⏳ Institutional-grade features
-- ⏳ API for third-party integration
-- ⏳ Advanced analytics dashboard
-- ⏳ Multi-user support
-
----
-
-## 📊 Performance Metrics
-
-*Based on backtesting and simulation*
-
-- **Average Profit per Trade**: 2.8%
-- **Win Rate**: 73%
-- **Sharpe Ratio**: 1.85
-- **Max Drawdown**: -8.2%
-- **Average Execution Time**: 3.2 seconds
-
-*Past performance does not guarantee future results. Trade at your own risk.*
-
----
-
-##  Disclaimer
+## Disclaimer
 
 This software is provided for educational and research purposes only. Trading prediction markets involves substantial risk of loss. The authors and contributors are not responsible for any financial losses incurred through the use of this software.
 
@@ -908,7 +746,6 @@ This software is provided for educational and research purposes only. Trading pr
 
 <div align="center">
 
-
-[⭐ Star this repo](https://github.com/Demiladepy/semantic) | [🐛 Report Bug](https://github.com/Demiladepy/semantic/issues) | [💡 Request Feature](https://github.com/Demiladepy/semantic/issues)
+[Star this repo](https://github.com/Demiladepy/semantic) | [Report Bug](https://github.com/Demiladepy/semantic/issues) | [Request Feature](https://github.com/Demiladepy/semantic/issues)
 
 </div>
