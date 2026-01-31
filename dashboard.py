@@ -13,6 +13,96 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 import hashlib
+import sys
+import os
+
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# ========================
+# IMPORT REAL MODULES
+# ========================
+
+# Try to import real modules, fall back gracefully
+REAL_MODULES_AVAILABLE = False
+PRIVACY_WRAPPER_AVAILABLE = False
+COLLATERAL_MANAGER_AVAILABLE = False
+PNP_AGENT_AVAILABLE = False
+
+try:
+    from pnp_infra.privacy_wrapper import PrivacyWrapper, PrivacyLevel
+    PRIVACY_WRAPPER_AVAILABLE = True
+except ImportError as e:
+    st.sidebar.warning(f"Privacy wrapper not available: {e}")
+    PrivacyWrapper = None
+    PrivacyLevel = None
+
+try:
+    from pnp_infra.collateral_manager import CollateralManager, CollateralStatus
+    COLLATERAL_MANAGER_AVAILABLE = True
+except ImportError as e:
+    st.sidebar.warning(f"Collateral manager not available: {e}")
+    CollateralManager = None
+
+try:
+    from pnp_agent import PNPAgent
+    PNP_AGENT_AVAILABLE = True
+except ImportError as e:
+    st.sidebar.warning(f"PNP Agent not available: {e}")
+    PNPAgent = None
+
+REAL_MODULES_AVAILABLE = PRIVACY_WRAPPER_AVAILABLE or COLLATERAL_MANAGER_AVAILABLE or PNP_AGENT_AVAILABLE
+
+# ========================
+# INITIALIZE REAL MODULES
+# ========================
+
+# Initialize modules in session state to persist across reruns
+if 'privacy_wrapper' not in st.session_state:
+    if PRIVACY_WRAPPER_AVAILABLE:
+        st.session_state.privacy_wrapper = PrivacyWrapper(default_privacy_level=PrivacyLevel.ANONYMOUS)
+    else:
+        st.session_state.privacy_wrapper = None
+
+if 'collateral_manager' not in st.session_state:
+    if COLLATERAL_MANAGER_AVAILABLE:
+        st.session_state.collateral_manager = CollateralManager()
+    else:
+        st.session_state.collateral_manager = None
+
+if 'pnp_agent' not in st.session_state:
+    if PNP_AGENT_AVAILABLE:
+        try:
+            st.session_state.pnp_agent = PNPAgent(
+                default_collateral_token='ELUSIV',
+                agent_id='streamlit-dashboard-agent'
+            )
+        except Exception as e:
+            st.session_state.pnp_agent = None
+    else:
+        st.session_state.pnp_agent = None
+
+if 'created_markets' not in st.session_state:
+    st.session_state.created_markets = []
+
+if 'activity_log' not in st.session_state:
+    st.session_state.activity_log = []
+
+# ========================
+# HELPER FUNCTIONS
+# ========================
+
+def log_activity(event: str, details: str, privacy: str = "-", status: str = "success"):
+    """Add entry to activity log."""
+    st.session_state.activity_log.insert(0, {
+        "Timestamp": datetime.now().strftime("%H:%M:%S"),
+        "Event": event,
+        "Details": details,
+        "Privacy": privacy,
+        "Status": "OK" if status == "success" else "FAIL"
+    })
+    # Keep only last 20 entries
+    st.session_state.activity_log = st.session_state.activity_log[:20]
 
 # ========================
 # PAGE CONFIG
@@ -28,9 +118,7 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .main {
-        padding: 20px;
-    }
+    .main { padding: 20px; }
     .solana-badge {
         background: linear-gradient(90deg, #9945FF 0%, #14F195 100%);
         padding: 8px 16px;
@@ -47,14 +135,14 @@ st.markdown(
         margin: 10px 0;
         border-left: 4px solid #9945FF;
     }
-    .zk-proof {
-        background-color: #0d1117;
-        padding: 10px;
+    .module-status {
+        padding: 5px 10px;
         border-radius: 5px;
-        font-family: monospace;
         font-size: 12px;
-        overflow-x: auto;
+        margin: 2px 0;
     }
+    .module-active { background-color: #14F195; color: black; }
+    .module-inactive { background-color: #FF6B6B; color: white; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -72,8 +160,11 @@ with col1:
     st.markdown("**AI Agent for Private Prediction Markets** | PNP Exchange Bounty")
 
 with col2:
-    st.markdown("### Status")
-    st.markdown("🟢 **Agent Active**")
+    st.markdown("### Module Status")
+    if REAL_MODULES_AVAILABLE:
+        st.markdown("🟢 **Real Modules Active**")
+    else:
+        st.markdown("🟡 **Demo Mode**")
     st.markdown(f"⏰ {datetime.now().strftime('%H:%M:%S')}")
 
 # ========================
@@ -82,29 +173,36 @@ with col2:
 
 st.sidebar.markdown("## 🔐 Privacy Settings")
 
-# Privacy token selection
 privacy_token = st.sidebar.selectbox(
     "Default Collateral Token",
     ["ELUSIV", "LIGHT", "PNP"],
     index=0
 )
 
-privacy_level = st.sidebar.radio(
+privacy_level_choice = st.sidebar.radio(
     "Privacy Level",
     ["Public", "Private", "Anonymous"],
     index=2
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("## 🤖 AI Agent Config")
+st.sidebar.markdown("## 📊 Module Status")
 
-ai_model = st.sidebar.selectbox(
-    "AI Model",
-    ["GPT-4o-mini", "GPT-4o", "Claude"],
-    index=0
-)
+# Show module status
+if PRIVACY_WRAPPER_AVAILABLE:
+    st.sidebar.markdown('<span class="module-status module-active">Privacy Wrapper: ACTIVE</span>', unsafe_allow_html=True)
+else:
+    st.sidebar.markdown('<span class="module-status module-inactive">Privacy Wrapper: INACTIVE</span>', unsafe_allow_html=True)
 
-auto_create = st.sidebar.checkbox("Auto-create markets", value=True)
+if COLLATERAL_MANAGER_AVAILABLE:
+    st.sidebar.markdown('<span class="module-status module-active">Collateral Manager: ACTIVE</span>', unsafe_allow_html=True)
+else:
+    st.sidebar.markdown('<span class="module-status module-inactive">Collateral Manager: INACTIVE</span>', unsafe_allow_html=True)
+
+if PNP_AGENT_AVAILABLE:
+    st.sidebar.markdown('<span class="module-status module-active">PNP Agent: ACTIVE</span>', unsafe_allow_html=True)
+else:
+    st.sidebar.markdown('<span class="module-status module-inactive">PNP Agent: INACTIVE</span>', unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 Network")
@@ -155,34 +253,77 @@ with tab1:
         
         if st.button("🚀 Create Market", type="primary"):
             with st.spinner("AI Agent processing..."):
-                import time
-                time.sleep(1)
+                result = None
                 
-                # Generate mock market
-                market_id = f"PNP-{hashlib.sha256(prompt.encode()).hexdigest()[:8].upper()}"
-                question = f"Will {prompt}?"
+                # Use real PNP Agent if available
+                if st.session_state.pnp_agent:
+                    try:
+                        result = st.session_state.pnp_agent.create_market_from_prompt(
+                            prompt=prompt,
+                            collateral_token=selected_token,
+                            collateral_amount=float(collateral_amount)
+                        )
+                        log_activity("Market Created", f"{result['market_id']} via PNP Agent", privacy_level_choice)
+                    except Exception as e:
+                        st.error(f"Error creating market: {e}")
+                        log_activity("Market Creation Failed", str(e), privacy_level_choice, "error")
+                else:
+                    # Fallback to mock
+                    import time
+                    time.sleep(1)
+                    market_id = f"PNP-{hashlib.sha256(prompt.encode()).hexdigest()[:8].upper()}"
+                    result = {
+                        'market_id': market_id,
+                        'question': f"Will {prompt}?",
+                        'collateral_amount': collateral_amount,
+                        'collateral_token': selected_token,
+                        'status': 'active'
+                    }
+                    log_activity("Market Created (Mock)", market_id, privacy_level_choice)
                 
-                st.success(f"Market Created Successfully!")
-                st.markdown(f"""
-                **Market ID:** `{market_id}`  
-                **Question:** {question}  
-                **Collateral:** {collateral_amount} {selected_token}  
-                **Privacy Level:** {privacy_level}
-                """)
+                if result:
+                    # Lock collateral using real manager if available
+                    if st.session_state.collateral_manager:
+                        try:
+                            lock_result = st.session_state.collateral_manager.lock_collateral(
+                                market_id=result['market_id'],
+                                token=selected_token,
+                                amount=float(collateral_amount),
+                                owner_pubkey=f"dashboard-user-{datetime.now().timestamp()}"
+                            )
+                            log_activity("Collateral Locked", f"{collateral_amount} {selected_token}", privacy_level_choice)
+                        except Exception as e:
+                            log_activity("Collateral Lock Failed", str(e), privacy_level_choice, "error")
+                    
+                    # Store market
+                    st.session_state.created_markets.append(result)
+                    
+                    st.success(f"Market Created Successfully!")
+                    st.markdown(f"""
+                    **Market ID:** `{result['market_id']}`  
+                    **Question:** {result.get('question', prompt)}  
+                    **Collateral:** {collateral_amount} {selected_token}  
+                    **Privacy Level:** {privacy_level_choice}  
+                    **Using Real Modules:** {'Yes' if st.session_state.pnp_agent else 'No (Mock)'}
+                    """)
     
     with col2:
         st.markdown("### Agent Status")
         
-        st.metric("Markets Created", "3", "+1")
-        st.metric("Total Collateral Locked", "$225", "+$100")
+        markets_count = len(st.session_state.created_markets)
+        total_collateral = sum(m.get('collateral_amount', 0) for m in st.session_state.created_markets)
+        
+        st.metric("Markets Created", str(markets_count), f"+{markets_count}")
+        st.metric("Total Collateral Locked", f"${total_collateral}", f"+${total_collateral}")
         st.metric("Agent Uptime", "99.8%")
         
         st.markdown("---")
         st.markdown("### Quick Stats")
         
+        agent_id = st.session_state.pnp_agent.agent_id if st.session_state.pnp_agent else "demo-agent"
         agent_data = {
-            "Metric": ["Agent ID", "Default Token", "AI Model", "Network"],
-            "Value": ["demo-agent-001", privacy_token, ai_model, network]
+            "Metric": ["Agent ID", "Default Token", "Real Modules", "Network"],
+            "Value": [agent_id[:20], privacy_token, "Yes" if REAL_MODULES_AVAILABLE else "No", network]
         }
         st.dataframe(pd.DataFrame(agent_data), hide_index=True, use_container_width=True)
 
@@ -194,6 +335,16 @@ with tab2:
     st.markdown("## 🔐 Privacy-Focused Collateral Tokens")
     
     col1, col2, col3 = st.columns(3)
+    
+    # Get real locked amounts if collateral manager available
+    elusiv_locked = 0
+    light_locked = 0
+    pnp_locked = 0
+    
+    if st.session_state.collateral_manager:
+        elusiv_locked = st.session_state.collateral_manager.get_total_locked('ELUSIV')
+        light_locked = st.session_state.collateral_manager.get_total_locked('LIGHT')
+        pnp_locked = st.session_state.collateral_manager.get_total_locked('PNP')
     
     with col1:
         st.markdown("""
@@ -209,8 +360,7 @@ with tab2:
             </ul>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.metric("Locked Amount", "100 ELUSIV", "+50")
+        st.metric("Locked Amount", f"{elusiv_locked:.0f} ELUSIV")
     
     with col2:
         st.markdown("""
@@ -226,8 +376,7 @@ with tab2:
             </ul>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.metric("Locked Amount", "75 LIGHT", "+25")
+        st.metric("Locked Amount", f"{light_locked:.0f} LIGHT")
     
     with col3:
         st.markdown("""
@@ -243,43 +392,68 @@ with tab2:
             </ul>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.metric("Locked Amount", "50 PNP", "+10")
+        st.metric("Locked Amount", f"{pnp_locked:.0f} PNP")
     
     st.markdown("---")
-    st.markdown("### 🔒 ZK Proof Demonstration")
+    st.markdown("### 🔒 ZK Proof Demonstration (Real Module)")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("#### Address Anonymization")
-        original_addr = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
-        anon_addr = f"anon_{hashlib.sha256(original_addr.encode()).hexdigest()[:32]}"
         
-        st.markdown(f"""
-        **Original Address:**
-        ```
-        {original_addr}
-        ```
+        test_address = st.text_input("Enter address to anonymize:", value="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU")
         
-        **Anonymized Address:**
-        ```
-        {anon_addr}
-        ```
-        """)
+        if st.button("Anonymize Address"):
+            if st.session_state.privacy_wrapper:
+                # Use REAL privacy wrapper
+                anon_addr = st.session_state.privacy_wrapper.anonymize_address(test_address)
+                log_activity("Address Anonymized", f"{test_address[:8]}... -> {anon_addr[:16]}...", "Anonymous")
+                st.success("Using REAL Privacy Wrapper!")
+            else:
+                # Fallback
+                anon_addr = f"anon_{hashlib.sha256(test_address.encode()).hexdigest()[:32]}"
+                log_activity("Address Anonymized (Mock)", f"{test_address[:8]}...", "Anonymous")
+                st.info("Using mock (Privacy Wrapper not available)")
+            
+            st.markdown(f"""
+            **Original Address:**
+            ```
+            {test_address}
+            ```
+            
+            **Anonymized Address:**
+            ```
+            {anon_addr}
+            ```
+            """)
     
     with col2:
-        st.markdown("#### ZK Proof Structure")
+        st.markdown("#### ZK Proof Creation")
         
-        proof_data = {
-            "proof_id": hashlib.sha256(b"demo_proof").hexdigest()[:16],
-            "proof_type": "ownership",
-            "statement": {"has_collateral": True},
-            "verified": True,
-            "created_at": datetime.now().isoformat()
-        }
-        
-        st.json(proof_data)
+        if st.button("Create ZK Proof"):
+            if st.session_state.privacy_wrapper:
+                # Use REAL privacy wrapper
+                proof = st.session_state.privacy_wrapper.create_zk_proof(
+                    proof_type="ownership",
+                    statement={"has_collateral": True, "amount_verified": True},
+                    witness={"amount": 100.0, "token": "ELUSIV"}
+                )
+                log_activity("ZK Proof Created", f"ID: {proof['proof_id'][:16]}...", "Anonymous")
+                st.success("Using REAL Privacy Wrapper!")
+                st.json(proof)
+            else:
+                # Fallback
+                proof_data = {
+                    "proof_id": hashlib.sha256(f"demo_{datetime.now()}".encode()).hexdigest()[:16],
+                    "proof_type": "ownership",
+                    "statement": {"has_collateral": True},
+                    "verified": True,
+                    "created_at": datetime.now().isoformat()
+                }
+                log_activity("ZK Proof Created (Mock)", f"ID: {proof_data['proof_id']}", "Anonymous")
+                st.info("Using mock (Privacy Wrapper not available)")
+                st.json(proof_data)
 
 # ========================
 # TAB 3: MARKETS
@@ -288,23 +462,19 @@ with tab2:
 with tab3:
     st.markdown("## 📊 Active Markets")
     
-    # Sample market data
-    markets_data = {
-        "Market ID": ["PNP-A1B2C3D4", "PNP-E5F6G7H8", "PNP-I9J0K1L2"],
-        "Question": [
-            "Will Solana reach $300 by Q2 2026?",
-            "Will Bitcoin ETF approval by SEC in Q1 2026?",
-            "Will Ethereum reach $5000 by end of 2026?"
-        ],
-        "Collateral": ["100 ELUSIV", "75 LIGHT", "50 PNP"],
-        "Privacy Level": ["Anonymous", "Private", "Private"],
-        "YES Price": [0.65, 0.72, 0.58],
-        "NO Price": [0.35, 0.28, 0.42],
-        "Status": ["🟢 Active", "🟢 Active", "🟢 Active"],
-    }
-    
-    df_markets = pd.DataFrame(markets_data)
-    st.dataframe(df_markets, use_container_width=True, height=200)
+    if st.session_state.created_markets:
+        # Build dataframe from real created markets
+        markets_data = {
+            "Market ID": [m.get('market_id', 'N/A') for m in st.session_state.created_markets],
+            "Question": [m.get('question', 'N/A')[:50] + "..." for m in st.session_state.created_markets],
+            "Collateral": [f"{m.get('collateral_amount', 0)} {m.get('collateral_token', 'N/A')}" for m in st.session_state.created_markets],
+            "Privacy Level": [privacy_level_choice for _ in st.session_state.created_markets],
+            "Status": [m.get('status', 'active') for m in st.session_state.created_markets],
+        }
+        df_markets = pd.DataFrame(markets_data)
+        st.dataframe(df_markets, use_container_width=True, height=200)
+    else:
+        st.info("No markets created yet. Go to the AI Agent tab to create a market!")
     
     st.markdown("---")
     
@@ -313,7 +483,16 @@ with tab3:
     with col1:
         st.markdown("### Market Distribution by Token")
         
-        token_dist = {"Token": ["ELUSIV", "LIGHT", "PNP"], "Count": [1, 1, 1]}
+        if st.session_state.created_markets:
+            token_counts = {}
+            for m in st.session_state.created_markets:
+                token = m.get('collateral_token', 'Unknown')
+                token_counts[token] = token_counts.get(token, 0) + 1
+            
+            token_dist = {"Token": list(token_counts.keys()), "Count": list(token_counts.values())}
+        else:
+            token_dist = {"Token": ["ELUSIV", "LIGHT", "PNP"], "Count": [0, 0, 0]}
+        
         fig_pie = px.pie(
             pd.DataFrame(token_dist),
             values="Count",
@@ -326,10 +505,20 @@ with tab3:
     with col2:
         st.markdown("### Collateral Locked Over Time")
         
-        time_data = {
-            "Time": pd.date_range(start="2026-01-25", periods=6, freq="D"),
-            "Collateral ($)": [0, 50, 100, 150, 175, 225]
-        }
+        # Generate time series from created markets
+        if st.session_state.created_markets:
+            cumulative = 0
+            time_data = {"Time": [], "Collateral ($)": []}
+            for i, m in enumerate(st.session_state.created_markets):
+                cumulative += m.get('collateral_amount', 0)
+                time_data["Time"].append(datetime.now() - timedelta(minutes=len(st.session_state.created_markets) - i))
+                time_data["Collateral ($)"].append(cumulative)
+        else:
+            time_data = {
+                "Time": [datetime.now()],
+                "Collateral ($)": [0]
+            }
+        
         fig_line = px.line(
             pd.DataFrame(time_data),
             x="Time",
@@ -347,40 +536,40 @@ with tab3:
 with tab4:
     st.markdown("## 📝 Agent Activity Log")
     
-    log_entries = [
-        {"Timestamp": "10:26:12", "Event": "Market Created", "Details": "PNP-A1B2C3D4 with 100 ELUSIV", "Privacy": "Anonymous", "Status": "✅"},
-        {"Timestamp": "10:25:45", "Event": "ZK Proof Created", "Details": "Ownership proof for collateral", "Privacy": "Anonymous", "Status": "✅"},
-        {"Timestamp": "10:25:30", "Event": "Address Anonymized", "Details": "Trader address -> anon_93dc08...", "Privacy": "Anonymous", "Status": "✅"},
-        {"Timestamp": "10:24:18", "Event": "AI Generation", "Details": "Market question generated from prompt", "Privacy": "-", "Status": "✅"},
-        {"Timestamp": "10:23:55", "Event": "Agent Initialized", "Details": "demo-agent-001 started", "Privacy": "-", "Status": "✅"},
-        {"Timestamp": "10:22:30", "Event": "Solana Connected", "Details": f"Connected to {network}", "Privacy": "-", "Status": "✅"},
-    ]
-    
-    df_logs = pd.DataFrame(log_entries)
-    
-    def color_status(val):
-        if val == "✅":
-            return "color: #14F195; font-weight: bold"
-        elif val == "❌":
-            return "color: #FF6B6B; font-weight: bold"
-        return ""
-    
-    st.dataframe(
-        df_logs.style.applymap(color_status, subset=["Status"]),
-        use_container_width=True,
-        height=400
-    )
+    if st.session_state.activity_log:
+        df_logs = pd.DataFrame(st.session_state.activity_log)
+        
+        def color_status(val):
+            if val == "OK":
+                return "color: #14F195; font-weight: bold"
+            elif val == "FAIL":
+                return "color: #FF6B6B; font-weight: bold"
+            return ""
+        
+        st.dataframe(
+            df_logs.style.applymap(color_status, subset=["Status"]),
+            use_container_width=True,
+            height=400
+        )
+    else:
+        st.info("No activity yet. Create a market or use privacy features to see logs!")
     
     st.markdown("---")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Total Events", len(log_entries))
+        st.metric("Total Events", len(st.session_state.activity_log))
     with col2:
-        st.metric("Success Rate", "100%")
+        success_count = sum(1 for log in st.session_state.activity_log if log.get("Status") == "OK")
+        total = len(st.session_state.activity_log) or 1
+        st.metric("Success Rate", f"{success_count/total*100:.0f}%")
     with col3:
-        st.metric("Avg Response Time", "1.2s")
+        st.metric("Real Modules Used", "Yes" if REAL_MODULES_AVAILABLE else "No")
+    
+    if st.button("Clear Activity Log"):
+        st.session_state.activity_log = []
+        st.rerun()
 
 # ========================
 # FOOTER
@@ -409,9 +598,10 @@ with col3:
     """)
 
 st.markdown(
-    """
+    f"""
     <div style="text-align: center; color: gray; font-size: 12px; margin-top: 20px;">
-        🔐 AI Agent for Private Prediction Markets | Built on Solana with PNP Exchange SDK
+        🔐 AI Agent for Private Prediction Markets | Built on Solana with PNP Exchange SDK<br>
+        <small>Real Modules: {'ACTIVE' if REAL_MODULES_AVAILABLE else 'INACTIVE'} | Privacy: {PRIVACY_WRAPPER_AVAILABLE} | Collateral: {COLLATERAL_MANAGER_AVAILABLE} | Agent: {PNP_AGENT_AVAILABLE}</small>
     </div>
     """,
     unsafe_allow_html=True,
